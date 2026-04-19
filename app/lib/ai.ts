@@ -76,5 +76,3 @@ Reply ONLY with a valid JSON array of numbers, no explanation. Example: [123, 45
     return null // signals AI was unavailable
   }
 }
-
-export { rankMovies }
