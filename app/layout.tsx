@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Movie Picker",
-  description: "Выбираем фильм компанией — по вайбу, не только по жанру",
+  title: "Vibe Watch",
+  description: "Great picks for every vibe in the room",
 };
 
 export default function RootLayout({

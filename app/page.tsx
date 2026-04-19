@@ -395,7 +395,7 @@ export default function Home() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="max-w-5xl mx-auto px-4 py-12">
         <header className="mb-10 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-100">Movie Picker</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-100">Vibe Watch</h1>
           <p className="mt-2 text-zinc-500 text-base">Great picks for every vibe in the room</p>
         </header>
 
