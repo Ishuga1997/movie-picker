@@ -30,6 +30,7 @@ export interface Movie {
   mediaType: 'movie' | 'series'
   director?: string
   cast?: string[]
+  rating?: number
 }
 
 export interface SearchRequest {

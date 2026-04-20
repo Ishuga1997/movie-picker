@@ -278,7 +278,12 @@ function MovieCard({
       <div className="p-4 flex flex-col flex-1 gap-2">
         <div>
           <h3 className="font-semibold text-zinc-100 leading-snug">{movie.title}</h3>
-          <p className="text-sm text-zinc-500">{movie.year}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-zinc-500">{movie.year}</p>
+            {movie.rating && (
+              <span className="text-xs font-medium text-amber-500">★ {movie.rating}</span>
+            )}
+          </div>
           {movie.director && (
             <p className="text-xs text-zinc-500 mt-0.5">Dir. {movie.director}</p>
           )}

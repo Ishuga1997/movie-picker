@@ -127,6 +127,9 @@ async function fetchDiscover(
           ? `https://www.themoviedb.org/movie/${id}`
           : `https://www.themoviedb.org/tv/${id}`,
         mediaType: isMovie ? 'movie' : 'series',
+        rating: typeof item.vote_average === 'number'
+          ? Math.round(item.vote_average * 10) / 10
+          : undefined,
       } satisfies Movie
     })
 
