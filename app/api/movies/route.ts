@@ -22,12 +22,10 @@ export async function POST(request: NextRequest) {
     const aiRanked = ranked !== null
     const ordered = ranked ?? movies
 
-    // Enrich top 15 with credits, leave the rest as-is
-    const top = await enrichWithCredits(ordered.slice(0, 15))
-    const rest = ordered.slice(15)
+    const enriched = await enrichWithCredits(ordered)
 
     return Response.json({
-      movies: [...top, ...rest],
+      movies: enriched,
       aiRanked,
     } satisfies SearchResponse)
   } catch (err) {
