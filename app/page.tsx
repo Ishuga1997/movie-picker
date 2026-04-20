@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { Participant, Movie, Region, MediaType, ContentType, YearMode, StreamingService } from './types'
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w342'
@@ -197,6 +197,58 @@ function YearFilter({
   )
 }
 
+// ── Country select ───────────────────────────────────────────────────────────
+
+function flagEmoji(code: string) {
+  return String.fromCodePoint(...code.split('').map((c) => 0x1f1e6 + c.toUpperCase().charCodeAt(0) - 65))
+}
+
+function CountrySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [])
+
+  const selected = WATCH_REGIONS.find((r) => r.code === value) ?? WATCH_REGIONS[0]
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors cursor-pointer outline-none"
+      >
+        <span className="text-base leading-none">{flagEmoji(selected.code)}</span>
+        <span>{selected.name}</span>
+        <span className="text-zinc-500 text-xs ml-0.5">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-52 max-h-52 overflow-y-auto rounded-xl bg-zinc-800 border border-zinc-700 shadow-xl">
+          {WATCH_REGIONS.map((r) => (
+            <button
+              key={r.code}
+              type="button"
+              onClick={() => { onChange(r.code); setOpen(false) }}
+              className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700 transition-colors ${
+                r.code === value ? 'text-amber-500' : 'text-zinc-200'
+              }`}
+            >
+              <span className="text-base leading-none">{flagEmoji(r.code)}</span>
+              <span>{r.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Participant card ─────────────────────────────────────────────────────────
 
 function ParticipantCard({
@@ -319,15 +371,10 @@ function ParticipantCard({
         {watchOpen && (
           <div className="border-t border-zinc-800">
             <div className="px-4 py-2 border-b border-zinc-800">
-              <select
+              <CountrySelect
                 value={participant.watchRegion}
-                onChange={(e) => onChange({ ...participant, watchRegion: e.target.value })}
-                className="w-full bg-zinc-900 text-zinc-300 text-sm rounded-lg px-2 py-1.5 border border-zinc-700 focus:outline-none focus:border-amber-500 cursor-pointer"
-              >
-                {WATCH_REGIONS.map((r) => (
-                  <option key={r.code} value={r.code}>{r.name}</option>
-                ))}
-              </select>
+                onChange={(code) => onChange({ ...participant, watchRegion: code })}
+              />
             </div>
           <div className="px-4 py-3 flex flex-wrap gap-2">
             <Pill
