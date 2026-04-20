@@ -314,23 +314,32 @@ function ParticipantCard({
     { value: 'animation', label: 'Animation' },
   ]
 
-  const [watchOpen, setWatchOpen] = useState(false)
-
-  const toggleService = (s: StreamingService) => {
-    const current = participant.streamingServices
-    const updated = current.includes(s) ? current.filter((x) => x !== s) : [...current, s]
-    onChange({ ...participant, streamingServices: updated })
-  }
-
-  const regionName = WATCH_REGIONS.find((r) => r.code === participant.watchRegion)?.name ?? participant.watchRegion
-  const watchLabel = participant.streamingServices.length === 0
-    ? regionName
-    : `${participant.streamingServices.map((s) => STREAMING_SERVICES.find((x) => x.id === s)?.name).join(', ')} · ${regionName}`
+  const [editingName, setEditingName] = useState(false)
+  const displayName = participant.name ?? `Person ${index + 1}`
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-zinc-100">Person {index + 1}</h2>
+        {editingName ? (
+          <input
+            autoFocus
+            value={participant.name ?? ''}
+            placeholder={`Person ${index + 1}`}
+            onChange={(e) => onChange({ ...participant, name: e.target.value })}
+            onBlur={() => setEditingName(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter') setEditingName(false) }}
+            className="text-base font-semibold text-zinc-100 bg-transparent border-b border-amber-500 outline-none w-40 placeholder:text-zinc-600"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditingName(true)}
+            className="text-base font-semibold text-zinc-100 hover:text-amber-400 transition-colors cursor-pointer"
+            title="Click to rename"
+          >
+            {displayName}
+          </button>
+        )}
         {canRemove && (
           <button
             type="button"
@@ -385,54 +394,6 @@ function ParticipantCard({
             </Pill>
           ))}
         </div>
-      </div>
-
-      <div className="border border-zinc-800 rounded-xl">
-        <button
-          type="button"
-          onClick={() => setWatchOpen((v) => !v)}
-          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors outline-none ${watchOpen ? '' : 'rounded-xl'}`}
-        >
-          <span className="text-zinc-400">Where to watch</span>
-          <span className="text-zinc-600 text-xs">
-            {watchLabel} {watchOpen ? '▲' : '▼'}
-          </span>
-        </button>
-        {watchOpen && (
-          <div className="border-t border-zinc-800">
-            <div className="px-4 py-2 border-b border-zinc-800">
-              <CountrySelect
-                value={participant.watchRegion}
-                onChange={(code) => onChange({ ...participant, watchRegion: code })}
-              />
-            </div>
-          <div className="px-4 py-3 flex flex-wrap gap-2">
-            <Pill
-              active={participant.streamingServices.length === 0}
-              onClick={() => onChange({ ...participant, streamingServices: [] })}
-            >
-              Doesn&apos;t matter
-            </Pill>
-            {STREAMING_SERVICES.map((s) => (
-              <Pill
-                key={s.id}
-                active={participant.streamingServices.includes(s.id)}
-                onClick={() => toggleService(s.id)}
-              >
-                <span className="flex items-center gap-1.5">
-                  <img
-                    src={`${TMDB_LOGO}${s.logo}`}
-                    alt=""
-                    className="w-4 h-4 rounded object-cover"
-                    onError={(e) => { e.currentTarget.style.display = 'none' }}
-                  />
-                  {s.name}
-                </span>
-              </Pill>
-            ))}
-          </div>
-          </div>
-        )}
       </div>
 
       <div className="space-y-1">
@@ -597,16 +558,23 @@ function MovieCard({
 
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([makeParticipant('1')])
+  const [sharedWatchRegion, setSharedWatchRegion] = useState('US')
+  const [sharedServices, setSharedServices] = useState<StreamingService[]>([])
+  const [watchOpen, setWatchOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/geo')
       .then((r) => r.json())
       .then(({ country }: { country: string }) => {
         const validCode = WATCH_REGIONS.find((r) => r.code === country)?.code ?? 'US'
-        setParticipants((prev) => prev.map((p) => ({ ...p, watchRegion: validCode })))
+        setSharedWatchRegion(validCode)
       })
       .catch(() => {})
   }, [])
+
+  const toggleSharedService = (s: StreamingService) =>
+    setSharedServices((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])
+
   const [allMovies, setAllMovies] = useState<Movie[]>([])
   const [shownIds, setShownIds] = useState<number[]>([])
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set())
@@ -635,7 +603,13 @@ export default function Home() {
       const res = await fetch('/api/movies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participants }),
+        body: JSON.stringify({
+          participants: participants.map((p) => ({
+            ...p,
+            watchRegion: sharedWatchRegion,
+            streamingServices: sharedServices,
+          })),
+        }),
       })
 
       if (!res.ok) throw new Error('Server error')
@@ -692,6 +666,51 @@ export default function Home() {
               canRemove={participants.length > 1}
             />
           ))}
+        </div>
+
+        <div className="mt-4 border border-zinc-800 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setWatchOpen((v) => !v)}
+            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors outline-none ${watchOpen ? '' : 'rounded-xl'}`}
+          >
+            <span className="text-zinc-400">Where to watch</span>
+            <span className="text-zinc-600 text-xs">
+              {sharedServices.length === 0
+                ? (WATCH_REGIONS.find((r) => r.code === sharedWatchRegion)?.name ?? sharedWatchRegion)
+                : `${sharedServices.map((s) => STREAMING_SERVICES.find((x) => x.id === s)?.name).join(', ')} · ${WATCH_REGIONS.find((r) => r.code === sharedWatchRegion)?.name ?? sharedWatchRegion}`
+              } {watchOpen ? '▲' : '▼'}
+            </span>
+          </button>
+          {watchOpen && (
+            <div className="border-t border-zinc-800">
+              <div className="px-4 py-2 border-b border-zinc-800">
+                <CountrySelect value={sharedWatchRegion} onChange={setSharedWatchRegion} />
+              </div>
+              <div className="px-4 py-3 flex flex-wrap gap-2">
+                <Pill active={sharedServices.length === 0} onClick={() => setSharedServices([])}>
+                  Doesn&apos;t matter
+                </Pill>
+                {STREAMING_SERVICES.map((s) => (
+                  <Pill
+                    key={s.id}
+                    active={sharedServices.includes(s.id)}
+                    onClick={() => toggleSharedService(s.id)}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <img
+                        src={`${TMDB_LOGO}${s.logo}`}
+                        alt=""
+                        className="w-4 h-4 rounded object-cover"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                      {s.name}
+                    </span>
+                  </Pill>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">

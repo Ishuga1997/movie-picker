@@ -14,6 +14,7 @@ export type StreamingService = 'netflix' | 'prime' | 'disney' | 'apple' | 'param
 
 export interface Participant {
   id: string
+  name?: string
   year: YearFilter
   region: Region
   mediaType: MediaType
