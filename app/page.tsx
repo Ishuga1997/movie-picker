@@ -3,6 +3,14 @@
 import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w342'
+
+const FEATURED_MOVIES = [
+  { title: "Thunderbolts*", year: 2025, rating: '7.3', poster: '/hqcexYHbiTBfDIdDWxrxPtVndBX.jpg', genre: 'Superhero' },
+  { title: "Sinners",       year: 2025, rating: '7.5', poster: '/705nQHqe4JGdEisrQmVYmXyjs1U.jpg', genre: 'Drama' },
+  { title: "Mickey 17",     year: 2025, rating: '6.8', poster: '/edKpE9B5qN3e559OuMCLZdW1iBZ.jpg', genre: 'Comedy' },
+]
+
 export default function LandingPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -42,31 +50,35 @@ export default function LandingPage() {
           {/* Left: text */}
           <div className="space-y-8">
             <h1 className="text-5xl font-bold tracking-tight leading-tight">
-              Бывает ли такое, что вы&nbsp;
-              <span className="text-amber-500">подолгу выбираете фильм?</span>
+              Still spending forever{' '}
+              <span className="text-amber-500">choosing what to watch?</span>
             </h1>
             <p className="text-lg text-zinc-400 leading-relaxed">
-              Vibe Watch учитывает ваше настроение, предпочтения и сервисы — и мгновенно находит фильм, который подойдёт именно вам.
+              Tell Vibe Watch your mood — it considers everyone&apos;s preferences and finds the perfect movie for you and your crew in seconds.
             </p>
             <button
               onClick={() => router.push('/app')}
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-500 text-black font-semibold text-lg hover:bg-amber-400 transition-colors cursor-pointer"
             >
-              Давай найдём фильм для тебя →
+              Find my perfect movie →
             </button>
           </div>
 
-          {/* Right: decorative mock */}
+          {/* Right: real TMDB posters */}
           <div className="relative hidden lg:block">
-            <div className="grid grid-cols-3 gap-3 opacity-90">
-              {[
-                { bg: 'from-violet-900 to-indigo-900', title: 'Cosmic Drift', year: '2023', rating: '8.4' },
-                { bg: 'from-rose-900 to-pink-900', title: 'Last Summer', year: '2022', rating: '7.9' },
-                { bg: 'from-amber-900 to-orange-900', title: 'Wildfire', year: '2024', rating: '8.1' },
-              ].map((card) => (
-                <div key={card.title} className={`bg-gradient-to-b ${card.bg} rounded-xl aspect-[2/3] p-3 flex flex-col justify-end border border-white/10`}>
-                  <p className="text-xs font-semibold text-white leading-tight">{card.title}</p>
-                  <p className="text-xs text-white/50 mt-0.5">{card.year} · ★ {card.rating}</p>
+            <div className="grid grid-cols-3 gap-3">
+              {FEATURED_MOVIES.map((movie) => (
+                <div key={movie.title} className="rounded-xl overflow-hidden aspect-[2/3] relative group">
+                  <img
+                    src={`${TMDB_IMG}${movie.poster}`}
+                    alt={movie.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-xs font-semibold text-white leading-tight">{movie.title}</p>
+                    <p className="text-xs text-white/60 mt-0.5">{movie.year} · ★ {movie.rating}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -78,16 +90,16 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-2 gap-6 pb-24">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-3">
             <div className="text-3xl">🎬</div>
-            <h3 className="text-xl font-semibold">Смотришь один</h3>
+            <h3 className="text-xl font-semibold">Watching alone?</h3>
             <p className="text-zinc-400 leading-relaxed">
-              Слишком много вариантов, которые не учитывают твоё настроение. Просто скажи Vibe Watch, что тебе хочется — и он подберёт фильмы под тебя.
+              Too many options that don&apos;t consider your mood. Just tell Vibe Watch what you&apos;re feeling — it picks movies that match exactly what you&apos;re looking for.
             </p>
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-3">
             <div className="text-3xl">👥</div>
-            <h3 className="text-xl font-semibold">Смотришь с компанией</h3>
+            <h3 className="text-xl font-semibold">Watching with friends?</h3>
             <p className="text-zinc-400 leading-relaxed">
-              Все хотят разного и вы долго скролите кинотеатры. Vibe Watch учитывает пожелания всех и подбирает фильмы, которые подойдут каждому.
+              Everyone wants something different and you endlessly scroll streaming services. Vibe Watch considers everyone&apos;s preferences and finds movies you&apos;ll all enjoy.
             </p>
           </div>
         </div>
