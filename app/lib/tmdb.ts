@@ -136,6 +136,43 @@ async function fetchDiscover(
   return results
 }
 
+async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
+  try {
+    const endpoint = movie.mediaType === 'movie'
+      ? `${BASE}/movie/${movie.id}/credits`
+      : `${BASE}/tv/${movie.id}/credits`
+
+    const res = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+      next: { revalidate: 86400 },
+    })
+
+    if (!res.ok) return movie
+
+    const data = await res.json()
+
+    const cast: string[] = (data.cast ?? [])
+      .slice(0, 3)
+      .map((c: Record<string, unknown>) => c.name as string)
+
+    let director: string | undefined
+    if (movie.mediaType === 'movie') {
+      const dir = (data.crew ?? []).find(
+        (c: Record<string, unknown>) => c.job === 'Director'
+      )
+      director = dir?.name as string | undefined
+    }
+
+    return { ...movie, cast, director }
+  } catch {
+    return movie
+  }
+}
+
+export async function enrichWithCredits(movies: Movie[]): Promise<Movie[]> {
+  return Promise.all(movies.map(fetchCreditsForMovie))
+}
+
 export async function fetchMovies(participants: Participant[]): Promise<Movie[]> {
   const { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive } =
     mergeFilters(participants)

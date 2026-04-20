@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import type { SearchRequest, SearchResponse } from '../../types'
-import { fetchMovies } from '../../lib/tmdb'
+import { fetchMovies, enrichWithCredits } from '../../lib/tmdb'
 import { rankMovies } from '../../lib/ai'
 
 export async function POST(request: NextRequest) {
@@ -20,9 +20,14 @@ export async function POST(request: NextRequest) {
 
     const ranked = await rankMovies(movies, participants)
     const aiRanked = ranked !== null
+    const ordered = ranked ?? movies
+
+    // Enrich top 15 with credits, leave the rest as-is
+    const top = await enrichWithCredits(ordered.slice(0, 15))
+    const rest = ordered.slice(15)
 
     return Response.json({
-      movies: ranked ?? movies,
+      movies: [...top, ...rest],
       aiRanked,
     } satisfies SearchResponse)
   } catch (err) {

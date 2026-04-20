@@ -279,6 +279,12 @@ function MovieCard({
         <div>
           <h3 className="font-semibold text-zinc-100 leading-snug">{movie.title}</h3>
           <p className="text-sm text-zinc-500">{movie.year}</p>
+          {movie.director && (
+            <p className="text-xs text-zinc-500 mt-0.5">Dir. {movie.director}</p>
+          )}
+          {movie.cast && movie.cast.length > 0 && (
+            <p className="text-xs text-zinc-600 mt-0.5">{movie.cast.join(', ')}</p>
+          )}
         </div>
         {movie.overview && (
           <div>

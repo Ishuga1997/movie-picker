@@ -28,6 +28,8 @@ export interface Movie {
   overview: string
   tmdbUrl: string
   mediaType: 'movie' | 'series'
+  director?: string
+  cast?: string[]
 }
 
 export interface SearchRequest {
