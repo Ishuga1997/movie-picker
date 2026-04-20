@@ -13,7 +13,7 @@ const STREAMING_SERVICES: { id: StreamingService; name: string; url: string; log
   { id: 'disney',    name: 'Disney+',    url: 'https://disneyplus.com',      logo: '/97yvRBw1GzX7fXprcF80er19ot.jpg',  providerIds: [337] },
   { id: 'apple',     name: 'Apple TV+',  url: 'https://tv.apple.com',        logo: '/mcbz1LgtErU9p4UdbZ0rG6RTWHX.jpg', providerIds: [350] },
   { id: 'paramount', name: 'Paramount+', url: 'https://paramountplus.com',   logo: '/fts6X10Jn4QT0X6ac3udKEn2tJA.jpg', providerIds: [2303, 2616] },
-  { id: 'hbo',       name: 'Max',        url: 'https://www.max.com',         logo: '/9fa9nEkyGmBi12kCqDi3LBerEwQ.jpg', providerIds: [384, 1899] },
+  { id: 'hbo',       name: 'Max',        url: 'https://www.max.com',         logo: '/Ajqyt5aNxNGjmF9uOfxArGrdf3X.jpg', providerIds: [384, 1899] },
 ]
 
 const ALL_KNOWN_PROVIDER_IDS = new Set(STREAMING_SERVICES.flatMap((s) => s.providerIds))
@@ -286,6 +286,7 @@ function ParticipantCard({
                     src={`${TMDB_LOGO}${s.logo}`}
                     alt=""
                     className="w-4 h-4 rounded object-cover"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
                   />
                   {s.name}
                 </span>
@@ -560,7 +561,7 @@ export default function Home() {
             disabled={isLoading}
             className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            {isLoading ? 'Searching...' : 'Find a movie'}
+            {isLoading ? 'Searching...' : "Let's watch"}
           </button>
         </div>
 
