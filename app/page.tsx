@@ -68,8 +68,8 @@ const WATCH_REGIONS = [
   { code: 'IL', name: 'Israel' },
 ]
 
-function makeParticipant(id: string): Participant {
-  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion: 'GB', vibe: '' }
+function makeParticipant(id: string, watchRegion = 'US'): Participant {
+  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion, vibe: '' }
 }
 
 // ── Pill ────────────────────────────────────────────────────────────────────
@@ -597,6 +597,16 @@ function MovieCard({
 
 export default function Home() {
   const [participants, setParticipants] = useState<Participant[]>([makeParticipant('1')])
+
+  useEffect(() => {
+    fetch('/api/geo')
+      .then((r) => r.json())
+      .then(({ country }: { country: string }) => {
+        const validCode = WATCH_REGIONS.find((r) => r.code === country)?.code ?? 'US'
+        setParticipants((prev) => prev.map((p) => ({ ...p, watchRegion: validCode })))
+      })
+      .catch(() => {})
+  }, [])
   const [allMovies, setAllMovies] = useState<Movie[]>([])
   const [shownIds, setShownIds] = useState<number[]>([])
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set())
