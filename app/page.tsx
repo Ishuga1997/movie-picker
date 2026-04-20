@@ -38,12 +38,9 @@ export default function LandingPage() {
   const filtersRef = useRef<HTMLDivElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
-  // Fix 1: use rAF so DOM is fully painted before scrolling
-  useEffect(() => {
-    const el = screen === 'filters' ? filtersRef.current : screen === 'results' ? resultsRef.current : null
-    if (!el) return
-    requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }, [screen])
+  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   // Fix 3: auto-detect country via IP on first load
   useEffect(() => {
@@ -56,10 +53,10 @@ export default function LandingPage() {
       .catch(() => {})
   }, [])
 
-  // If already logged in, CTA goes straight to app
   const handleHeroCTA = () => {
     if (session) { router.push('/app'); return }
     setScreen('filters')
+    scrollTo(filtersRef)
   }
 
   // Save filters to localStorage (same keys the app uses) and set autorun flag
@@ -71,6 +68,7 @@ export default function LandingPage() {
       localStorage.setItem('vw-autorun', 'true')
     } catch {}
     setScreen('results')
+    scrollTo(resultsRef)
   }
 
   const handleSignIn = () => signIn('google', { callbackUrl: '/app' })
