@@ -68,8 +68,8 @@ const WATCH_REGIONS = [
   { code: 'IL', name: 'Israel' },
 ]
 
-function makeParticipant(id: string, watchRegion = 'US'): Participant {
-  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion, vibe: '' }
+function makeParticipant(id: string, name?: string): Participant {
+  return { id, name, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion: 'US', vibe: '' }
 }
 
 // ── Pill ────────────────────────────────────────────────────────────────────
@@ -620,6 +620,8 @@ export default function Home() {
     setDismissedIds(new Set())
     setAiRanked(null)
     setError(null)
+    setSharedServices([])
+    setParticipants((prev) => prev.map((p) => makeParticipant(p.id, p.name)))
   }
 
   const handleFind = async () => {
