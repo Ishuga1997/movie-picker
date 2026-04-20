@@ -554,15 +554,45 @@ function MovieCard({
   )
 }
 
+// ── Persistence ─────────────────────────────────────────────────────────────
+
+function useLocalStorage<T>(key: string, initial: T): [T, React.Dispatch<React.SetStateAction<T>>] {
+  const [value, setValue] = useState<T>(() => {
+    if (typeof window === 'undefined') return initial
+    try {
+      const item = window.localStorage.getItem(key)
+      return item !== null ? (JSON.parse(item) as T) : initial
+    } catch {
+      return initial
+    }
+  })
+  useEffect(() => {
+    try { window.localStorage.setItem(key, JSON.stringify(value)) } catch {}
+  }, [key, value])
+  return [value, setValue]
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [participants, setParticipants] = useState<Participant[]>([makeParticipant('1')])
-  const [sharedWatchRegion, setSharedWatchRegion] = useState('US')
-  const [sharedServices, setSharedServices] = useState<StreamingService[]>([])
+  const [participants, setParticipants] = useLocalStorage<Participant[]>('vw-participants', [makeParticipant('1')])
+  const [sharedWatchRegion, setSharedWatchRegion] = useLocalStorage<string>('vw-watchRegion', 'US')
+  const [sharedServices, setSharedServices] = useLocalStorage<StreamingService[]>('vw-services', [])
+  const [allMovies, setAllMovies] = useLocalStorage<Movie[]>('vw-movies', [])
+  const [shownIds, setShownIds] = useLocalStorage<number[]>('vw-shown', [])
+  const [dismissedArray, setDismissedArray] = useLocalStorage<number[]>('vw-dismissed', [])
+  const [aiRanked, setAiRanked] = useLocalStorage<boolean | null>('vw-aiRanked', null)
+
+  const dismissedIds = new Set(dismissedArray)
+  const setDismissedIds = (next: Set<number>) => setDismissedArray([...next])
+
   const [watchOpen, setWatchOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Only auto-detect on first visit (no stored preference)
+    if (typeof window !== 'undefined' && window.localStorage.getItem('vw-watchRegion') !== null) return
     fetch('/api/geo')
       .then((r) => r.json())
       .then(({ country }: { country: string }) => {
@@ -570,17 +600,10 @@ export default function Home() {
         setSharedWatchRegion(validCode)
       })
       .catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleSharedService = (s: StreamingService) =>
     setSharedServices((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])
-
-  const [allMovies, setAllMovies] = useState<Movie[]>([])
-  const [shownIds, setShownIds] = useState<number[]>([])
-  const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set())
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [aiRanked, setAiRanked] = useState<boolean | null>(null)
 
   const shownMovies = shownIds
     .map((id) => allMovies.find((m) => m.id === id))
@@ -589,6 +612,14 @@ export default function Home() {
   const addParticipant = () => {
     if (participants.length >= 5) return
     setParticipants((prev) => [...prev, makeParticipant(String(Date.now()))])
+  }
+
+  const handleReset = () => {
+    setAllMovies([])
+    setShownIds([])
+    setDismissedIds(new Set())
+    setAiRanked(null)
+    setError(null)
   }
 
   const handleFind = async () => {
@@ -714,7 +745,7 @@ export default function Home() {
         </div>
 
         <div className="mt-6 flex gap-3">
-          {participants.length < 5 && (
+          {participants.length < 5 && allMovies.length === 0 && (
             <button
               type="button"
               onClick={addParticipant}
@@ -723,14 +754,24 @@ export default function Home() {
               + Add person
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleFind}
-            disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isLoading ? 'Searching...' : "Let's watch"}
-          </button>
+          {allMovies.length > 0 ? (
+            <button
+              type="button"
+              onClick={handleReset}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors cursor-pointer"
+            >
+              Reset
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFind}
+              disabled={isLoading}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isLoading ? 'Searching...' : "Let's watch"}
+            </button>
+          )}
         </div>
 
         {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
