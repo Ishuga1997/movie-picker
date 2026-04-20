@@ -203,9 +203,13 @@ function flagEmoji(code: string) {
   return String.fromCodePoint(...code.split('').map((c) => 0x1f1e6 + c.toUpperCase().charCodeAt(0) - 65))
 }
 
+const SORTED_REGIONS = [...WATCH_REGIONS].sort((a, b) => a.name.localeCompare(b.name))
+
 function CountrySelect({ value, onChange }: { value: string; onChange: (code: string) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const search = useRef<{ text: string; timer: ReturnType<typeof setTimeout> | null }>({ text: '', timer: null })
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
@@ -215,10 +219,22 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [])
 
-  const selected = WATCH_REGIONS.find((r) => r.code === value) ?? WATCH_REGIONS[0]
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!open || e.key.length !== 1) return
+    const s = search.current
+    if (s.timer) clearTimeout(s.timer)
+    s.text += e.key.toLowerCase()
+    s.timer = setTimeout(() => { s.text = '' }, 800)
+    const match = SORTED_REGIONS.find((r) => r.name.toLowerCase().startsWith(s.text))
+    if (match) {
+      listRef.current?.querySelector<HTMLElement>(`[data-code="${match.code}"]`)?.scrollIntoView({ block: 'nearest' })
+    }
+  }
+
+  const selected = SORTED_REGIONS.find((r) => r.code === value) ?? SORTED_REGIONS[0]
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div ref={ref} className="relative inline-block" onKeyDown={handleKeyDown}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -229,10 +245,11 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
         <span className="text-zinc-500 text-xs ml-0.5">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-52 max-h-52 overflow-y-auto rounded-xl bg-zinc-800 border border-zinc-700 shadow-xl">
-          {WATCH_REGIONS.map((r) => (
+        <div ref={listRef} className="absolute left-0 top-full mt-1 z-50 w-64 max-h-72 overflow-y-auto rounded-xl bg-zinc-800 border border-zinc-700 shadow-xl">
+          {SORTED_REGIONS.map((r) => (
             <button
               key={r.code}
+              data-code={r.code}
               type="button"
               onClick={() => { onChange(r.code); setOpen(false) }}
               className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700 transition-colors ${
