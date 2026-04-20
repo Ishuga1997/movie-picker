@@ -387,11 +387,11 @@ function ParticipantCard({
         </div>
       </div>
 
-      <div className="border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="border border-zinc-800 rounded-xl">
         <button
           type="button"
           onClick={() => setWatchOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors outline-none"
+          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors outline-none ${watchOpen ? '' : 'rounded-xl'}`}
         >
           <span className="text-zinc-400">Where to watch</span>
           <span className="text-zinc-600 text-xs">
