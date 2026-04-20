@@ -10,6 +10,7 @@ export interface YearFilter {
 export type Region = 'any' | 'usa_uk' | 'europe' | 'asia' | 'india'
 export type MediaType = 'any' | 'movie' | 'series'
 export type ContentType = 'any' | 'live' | 'animation'
+export type StreamingService = 'netflix' | 'prime' | 'disney' | 'apple' | 'paramount'
 
 export interface Participant {
   id: string
@@ -17,7 +18,14 @@ export interface Participant {
   region: Region
   mediaType: MediaType
   contentType: ContentType
+  streamingServices: StreamingService[]
   vibe: string
+}
+
+export interface StreamingProvider {
+  id: number
+  name: string
+  logoPath: string
 }
 
 export interface Movie {
@@ -31,6 +39,7 @@ export interface Movie {
   director?: string
   cast?: string[]
   rating?: number
+  providers?: StreamingProvider[]
 }
 
 export interface SearchRequest {

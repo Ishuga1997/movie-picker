@@ -1,7 +1,15 @@
-import type { Participant, Movie } from '../types'
+import type { Participant, Movie, StreamingService, StreamingProvider } from '../types'
 
 const BASE = 'https://api.themoviedb.org/3'
 const TOKEN = process.env.TMDB_API_TOKEN!
+
+const STREAMING_PROVIDER_IDS: Record<StreamingService, number> = {
+  netflix: 8,
+  prime: 9,
+  disney: 337,
+  apple: 350,
+  paramount: 531,
+}
 
 const REGION_COUNTRIES: Record<string, string> = {
   usa_uk: 'US|GB',
@@ -84,7 +92,13 @@ function mergeFilters(participants: Participant[]) {
   const wantsAnimation = participants.some((p) => p.contentType === 'any' || p.contentType === 'animation')
   const wantsLive = participants.some((p) => p.contentType === 'any' || p.contentType === 'live')
 
-  return { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive }
+  const allServices = participants.flatMap((p) => p.streamingServices ?? [])
+  const uniqueServices = [...new Set(allServices)] as StreamingService[]
+  const watchProviderIds = uniqueServices.length > 0
+    ? uniqueServices.map((s) => STREAMING_PROVIDER_IDS[s]).join('|')
+    : undefined
+
+  return { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds }
 }
 
 async function fetchDiscover(
@@ -142,8 +156,8 @@ async function fetchDiscover(
 async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
   try {
     const endpoint = movie.mediaType === 'movie'
-      ? `${BASE}/movie/${movie.id}/credits`
-      : `${BASE}/tv/${movie.id}/credits`
+      ? `${BASE}/movie/${movie.id}?append_to_response=credits,watch%2Fproviders`
+      : `${BASE}/tv/${movie.id}?append_to_response=credits,watch%2Fproviders`
 
     const res = await fetch(endpoint, {
       headers: { Authorization: `Bearer ${TOKEN}` },
@@ -154,19 +168,28 @@ async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
 
     const data = await res.json()
 
-    const cast: string[] = (data.cast ?? [])
+    const credits = data.credits ?? data
+    const cast: string[] = (credits.cast ?? [])
       .slice(0, 3)
       .map((c: Record<string, unknown>) => c.name as string)
 
     let director: string | undefined
     if (movie.mediaType === 'movie') {
-      const dir = (data.crew ?? []).find(
+      const dir = (credits.crew ?? []).find(
         (c: Record<string, unknown>) => c.job === 'Director'
       )
       director = dir?.name as string | undefined
     }
 
-    return { ...movie, cast, director }
+    const flatrate: Record<string, unknown>[] =
+      data['watch/providers']?.results?.US?.flatrate ?? []
+    const providers: StreamingProvider[] = flatrate.map((p) => ({
+      id: p.provider_id as number,
+      name: p.provider_name as string,
+      logoPath: p.logo_path as string,
+    }))
+
+    return { ...movie, cast, director, providers }
   } catch {
     return movie
   }
@@ -177,7 +200,7 @@ export async function enrichWithCredits(movies: Movie[]): Promise<Movie[]> {
 }
 
 export async function fetchMovies(participants: Participant[]): Promise<Movie[]> {
-  const { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive } =
+  const { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds } =
     mergeFilters(participants)
 
   // Resolve vibe → TMDB keyword IDs in parallel with nothing else blocking
@@ -196,6 +219,12 @@ export async function fetchMovies(participants: Participant[]): Promise<Movie[]>
 
     // Keyword filter from vibe (OR logic — movie must match at least one keyword)
     if (keywordIds.length > 0) p['with_keywords'] = keywordIds.join('|')
+
+    // Streaming service filter
+    if (watchProviderIds) {
+      p['with_watch_providers'] = watchProviderIds
+      p['watch_region'] = 'US'
+    }
 
     return p
   }

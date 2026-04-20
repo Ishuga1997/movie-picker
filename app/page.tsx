@@ -1,12 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import type { Participant, Movie, Region, MediaType, ContentType, YearMode } from './types'
+import type { Participant, Movie, Region, MediaType, ContentType, YearMode, StreamingService } from './types'
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w342'
 
+const TMDB_LOGO = 'https://image.tmdb.org/t/p/original'
+
+const STREAMING_SERVICES: { id: StreamingService; name: string; url: string }[] = [
+  { id: 'netflix',   name: 'Netflix',    url: 'https://netflix.com' },
+  { id: 'prime',     name: 'Prime',      url: 'https://primevideo.com' },
+  { id: 'disney',    name: 'Disney+',    url: 'https://disneyplus.com' },
+  { id: 'apple',     name: 'Apple TV+',  url: 'https://tv.apple.com' },
+  { id: 'paramount', name: 'Paramount+', url: 'https://paramountplus.com' },
+]
+
 function makeParticipant(id: string): Participant {
-  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', vibe: '' }
+  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], vibe: '' }
 }
 
 // ── Pill ────────────────────────────────────────────────────────────────────
@@ -169,6 +179,20 @@ function ParticipantCard({
     { value: 'animation', label: 'Animation' },
   ]
 
+  const [watchOpen, setWatchOpen] = useState(false)
+
+  const toggleService = (s: StreamingService) => {
+    const current = participant.streamingServices
+    const updated = current.includes(s) ? current.filter((x) => x !== s) : [...current, s]
+    onChange({ ...participant, streamingServices: updated })
+  }
+
+  const watchLabel = participant.streamingServices.length === 0
+    ? "Doesn't matter"
+    : participant.streamingServices
+        .map((s) => STREAMING_SERVICES.find((x) => x.id === s)?.name)
+        .join(', ')
+
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between">
@@ -202,6 +226,38 @@ function ParticipantCard({
             </Pill>
           ))}
         </div>
+      </div>
+
+      <div className="border border-zinc-800 rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setWatchOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors"
+        >
+          <span className="text-zinc-400">Where to watch</span>
+          <span className="text-zinc-600 text-xs">
+            {watchLabel} {watchOpen ? '▲' : '▼'}
+          </span>
+        </button>
+        {watchOpen && (
+          <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap gap-2">
+            <Pill
+              active={participant.streamingServices.length === 0}
+              onClick={() => onChange({ ...participant, streamingServices: [] })}
+            >
+              Doesn&apos;t matter
+            </Pill>
+            {STREAMING_SERVICES.map((s) => (
+              <Pill
+                key={s.id}
+                active={participant.streamingServices.includes(s.id)}
+                onClick={() => toggleService(s.id)}
+              >
+                {s.name}
+              </Pill>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -244,6 +300,45 @@ function ParticipantCard({
 }
 
 // ── Movie card ───────────────────────────────────────────────────────────────
+
+function ProvidersSection({ providers }: { providers: NonNullable<Movie['providers']> }) {
+  const [open, setOpen] = useState(false)
+
+  const providerUrl = (name: string) =>
+    STREAMING_SERVICES.find((s) => name.toLowerCase().includes(s.id))?.url ?? '#'
+
+  return (
+    <div className="border-t border-zinc-800 pt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="text-xs text-zinc-600 hover:text-amber-500 transition-colors cursor-pointer"
+      >
+        Where to watch {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {providers.map((p) => (
+            <a
+              key={p.id}
+              href={providerUrl(p.name)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={p.name}
+              className="block rounded-lg overflow-hidden w-8 h-8 hover:ring-2 hover:ring-amber-500 transition-all"
+            >
+              <img
+                src={`${TMDB_LOGO}${p.logoPath}`}
+                alt={p.name}
+                className="w-full h-full object-cover"
+              />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function MovieCard({
   movie,
@@ -305,6 +400,10 @@ function MovieCard({
             </button>
           </div>
         )}
+        {movie.providers && movie.providers.length > 0 && (
+          <ProvidersSection providers={movie.providers} />
+        )}
+
         <div className="mt-auto pt-3 flex flex-col gap-1.5">
           <a
             href={movie.tmdbUrl}
