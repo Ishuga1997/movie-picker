@@ -7,13 +7,16 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w342'
 
 const TMDB_LOGO = 'https://image.tmdb.org/t/p/original'
 
-const STREAMING_SERVICES: { id: StreamingService; name: string; url: string }[] = [
-  { id: 'netflix',   name: 'Netflix',    url: 'https://netflix.com' },
-  { id: 'prime',     name: 'Prime',      url: 'https://primevideo.com' },
-  { id: 'disney',    name: 'Disney+',    url: 'https://disneyplus.com' },
-  { id: 'apple',     name: 'Apple TV+',  url: 'https://tv.apple.com' },
-  { id: 'paramount', name: 'Paramount+', url: 'https://paramountplus.com' },
+const STREAMING_SERVICES: { id: StreamingService; name: string; url: string; logo: string; providerIds: number[] }[] = [
+  { id: 'netflix',   name: 'Netflix',    url: 'https://netflix.com',         logo: '/pbpMk2JmcoNnQwx5JGpXngfoWtp.jpg', providerIds: [8] },
+  { id: 'prime',     name: 'Prime',      url: 'https://primevideo.com',      logo: '/pvske1MyAoymrs5bguRfVqYiM9a.jpg',  providerIds: [9] },
+  { id: 'disney',    name: 'Disney+',    url: 'https://disneyplus.com',      logo: '/97yvRBw1GzX7fXprcF80er19ot.jpg',  providerIds: [337] },
+  { id: 'apple',     name: 'Apple TV+',  url: 'https://tv.apple.com',        logo: '/mcbz1LgtErU9p4UdbZ0rG6RTWHX.jpg', providerIds: [350] },
+  { id: 'paramount', name: 'Paramount+', url: 'https://paramountplus.com',   logo: '/fts6X10Jn4QT0X6ac3udKEn2tJA.jpg', providerIds: [2303, 2616] },
+  { id: 'hbo',       name: 'Max',        url: 'https://www.max.com',         logo: '/9fa9nEkyGmBi12kCqDi3LBerEwQ.jpg', providerIds: [384, 1899] },
 ]
+
+const ALL_KNOWN_PROVIDER_IDS = new Set(STREAMING_SERVICES.flatMap((s) => s.providerIds))
 
 function makeParticipant(id: string): Participant {
   return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], vibe: '' }
@@ -228,38 +231,6 @@ function ParticipantCard({
         </div>
       </div>
 
-      <div className="border border-zinc-800 rounded-xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setWatchOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors"
-        >
-          <span className="text-zinc-400">Where to watch</span>
-          <span className="text-zinc-600 text-xs">
-            {watchLabel} {watchOpen ? '▲' : '▼'}
-          </span>
-        </button>
-        {watchOpen && (
-          <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap gap-2">
-            <Pill
-              active={participant.streamingServices.length === 0}
-              onClick={() => onChange({ ...participant, streamingServices: [] })}
-            >
-              Doesn&apos;t matter
-            </Pill>
-            {STREAMING_SERVICES.map((s) => (
-              <Pill
-                key={s.id}
-                active={participant.streamingServices.includes(s.id)}
-                onClick={() => toggleService(s.id)}
-              >
-                {s.name}
-              </Pill>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           {mediaTypes.map((t) => (
@@ -285,6 +256,45 @@ function ParticipantCard({
         </div>
       </div>
 
+      <div className="border border-zinc-800 rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setWatchOpen((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-2.5 text-sm cursor-pointer hover:bg-zinc-800 transition-colors outline-none"
+        >
+          <span className="text-zinc-400">Where to watch</span>
+          <span className="text-zinc-600 text-xs">
+            {watchLabel} {watchOpen ? '▲' : '▼'}
+          </span>
+        </button>
+        {watchOpen && (
+          <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap gap-2">
+            <Pill
+              active={participant.streamingServices.length === 0}
+              onClick={() => onChange({ ...participant, streamingServices: [] })}
+            >
+              Doesn&apos;t matter
+            </Pill>
+            {STREAMING_SERVICES.map((s) => (
+              <Pill
+                key={s.id}
+                active={participant.streamingServices.includes(s.id)}
+                onClick={() => toggleService(s.id)}
+              >
+                <span className="flex items-center gap-1.5">
+                  <img
+                    src={`${TMDB_LOGO}${s.logo}`}
+                    alt=""
+                    className="w-4 h-4 rounded object-cover"
+                  />
+                  {s.name}
+                </span>
+              </Pill>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="space-y-1">
         <label className="text-xs text-zinc-500 uppercase tracking-wide">Vibe</label>
         <textarea
@@ -304,8 +314,18 @@ function ParticipantCard({
 function ProvidersSection({ providers }: { providers: NonNullable<Movie['providers']> }) {
   const [open, setOpen] = useState(false)
 
-  const providerUrl = (name: string) =>
-    STREAMING_SERVICES.find((s) => name.toLowerCase().includes(s.id))?.url ?? '#'
+  // One icon per service — deduplicate by service id
+  const seenServices = new Set<string>()
+  const deduped = providers.reduce<{ provider: typeof providers[number]; service: typeof STREAMING_SERVICES[number] }[]>((acc, p) => {
+    const service = STREAMING_SERVICES.find((s) => s.providerIds.includes(p.id))
+    if (service && !seenServices.has(service.id)) {
+      seenServices.add(service.id)
+      acc.push({ provider: p, service })
+    }
+    return acc
+  }, [])
+
+  if (deduped.length === 0) return null
 
   return (
     <div className="border-t border-zinc-800 pt-2">
@@ -318,10 +338,10 @@ function ProvidersSection({ providers }: { providers: NonNullable<Movie['provide
       </button>
       {open && (
         <div className="mt-2 flex flex-wrap gap-2">
-          {providers.map((p) => (
+          {deduped.map(({ provider: p, service }) => (
             <a
-              key={p.id}
-              href={providerUrl(p.name)}
+              key={service.id}
+              href={service.url}
               target="_blank"
               rel="noopener noreferrer"
               title={p.name}

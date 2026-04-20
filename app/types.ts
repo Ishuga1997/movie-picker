@@ -10,7 +10,7 @@ export interface YearFilter {
 export type Region = 'any' | 'usa_uk' | 'europe' | 'asia' | 'india'
 export type MediaType = 'any' | 'movie' | 'series'
 export type ContentType = 'any' | 'live' | 'animation'
-export type StreamingService = 'netflix' | 'prime' | 'disney' | 'apple' | 'paramount'
+export type StreamingService = 'netflix' | 'prime' | 'disney' | 'apple' | 'paramount' | 'hbo'
 
 export interface Participant {
   id: string

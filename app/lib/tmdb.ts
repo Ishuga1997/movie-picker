@@ -3,12 +3,13 @@ import type { Participant, Movie, StreamingService, StreamingProvider } from '..
 const BASE = 'https://api.themoviedb.org/3'
 const TOKEN = process.env.TMDB_API_TOKEN!
 
-const STREAMING_PROVIDER_IDS: Record<StreamingService, number> = {
-  netflix: 8,
-  prime: 9,
-  disney: 337,
-  apple: 350,
-  paramount: 531,
+const STREAMING_PROVIDER_IDS: Record<StreamingService, string> = {
+  netflix: '8',
+  prime: '9',
+  disney: '337',
+  apple: '350',
+  paramount: '2303|2616',
+  hbo: '384|1899',
 }
 
 const REGION_COUNTRIES: Record<string, string> = {
