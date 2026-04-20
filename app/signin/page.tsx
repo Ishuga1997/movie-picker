@@ -11,7 +11,7 @@ export default function SignIn() {
           <p className="mt-2 text-zinc-500 text-base">Great picks for every vibe in the room</p>
         </div>
         <button
-          onClick={() => signIn('google', { callbackUrl: '/' })}
+          onClick={() => signIn('google', { callbackUrl: '/app' })}
           className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-white text-zinc-900 font-medium text-sm hover:bg-zinc-100 transition-colors cursor-pointer shadow-lg"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
