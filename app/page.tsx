@@ -18,8 +18,58 @@ const STREAMING_SERVICES: { id: StreamingService; name: string; url: string; log
 
 const ALL_KNOWN_PROVIDER_IDS = new Set(STREAMING_SERVICES.flatMap((s) => s.providerIds))
 
+const WATCH_REGIONS = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'FR', name: 'France' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'DK', name: 'Denmark' },
+  { code: 'FI', name: 'Finland' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'CZ', name: 'Czech Republic' },
+  { code: 'HU', name: 'Hungary' },
+  { code: 'RO', name: 'Romania' },
+  { code: 'GR', name: 'Greece' },
+  { code: 'TR', name: 'Turkey' },
+  { code: 'RU', name: 'Russia' },
+  { code: 'IN', name: 'India' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'KR', name: 'South Korea' },
+  { code: 'HK', name: 'Hong Kong' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'TH', name: 'Thailand' },
+  { code: 'ID', name: 'Indonesia' },
+  { code: 'MY', name: 'Malaysia' },
+  { code: 'PH', name: 'Philippines' },
+  { code: 'TW', name: 'Taiwan' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'CL', name: 'Chile' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'EG', name: 'Egypt' },
+  { code: 'SA', name: 'Saudi Arabia' },
+  { code: 'AE', name: 'UAE' },
+  { code: 'IL', name: 'Israel' },
+]
+
 function makeParticipant(id: string): Participant {
-  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], vibe: '' }
+  return { id, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion: 'GB', vibe: '' }
 }
 
 // ── Pill ────────────────────────────────────────────────────────────────────
@@ -190,11 +240,10 @@ function ParticipantCard({
     onChange({ ...participant, streamingServices: updated })
   }
 
+  const regionName = WATCH_REGIONS.find((r) => r.code === participant.watchRegion)?.name ?? participant.watchRegion
   const watchLabel = participant.streamingServices.length === 0
-    ? "Doesn't matter"
-    : participant.streamingServices
-        .map((s) => STREAMING_SERVICES.find((x) => x.id === s)?.name)
-        .join(', ')
+    ? regionName
+    : `${participant.streamingServices.map((s) => STREAMING_SERVICES.find((x) => x.id === s)?.name).join(', ')} · ${regionName}`
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
@@ -268,7 +317,19 @@ function ParticipantCard({
           </span>
         </button>
         {watchOpen && (
-          <div className="px-4 py-3 border-t border-zinc-800 flex flex-wrap gap-2">
+          <div className="border-t border-zinc-800">
+            <div className="px-4 py-2 border-b border-zinc-800">
+              <select
+                value={participant.watchRegion}
+                onChange={(e) => onChange({ ...participant, watchRegion: e.target.value })}
+                className="w-full bg-zinc-900 text-zinc-300 text-sm rounded-lg px-2 py-1.5 border border-zinc-700 focus:outline-none focus:border-amber-500 cursor-pointer"
+              >
+                {WATCH_REGIONS.map((r) => (
+                  <option key={r.code} value={r.code}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          <div className="px-4 py-3 flex flex-wrap gap-2">
             <Pill
               active={participant.streamingServices.length === 0}
               onClick={() => onChange({ ...participant, streamingServices: [] })}
@@ -292,6 +353,7 @@ function ParticipantCard({
                 </span>
               </Pill>
             ))}
+          </div>
           </div>
         )}
       </div>

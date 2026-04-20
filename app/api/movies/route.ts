@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     const aiRanked = ranked !== null
     const ordered = ranked ?? movies
 
-    const enriched = await enrichWithCredits(ordered)
+    const regions = [...new Set(participants.map((p) => p.watchRegion ?? 'GB'))]
+    const enriched = await enrichWithCredits(ordered, regions)
 
     return Response.json({
       movies: enriched,

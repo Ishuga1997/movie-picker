@@ -19,6 +19,7 @@ export interface Participant {
   mediaType: MediaType
   contentType: ContentType
   streamingServices: StreamingService[]
+  watchRegion: string
   vibe: string
 }
 

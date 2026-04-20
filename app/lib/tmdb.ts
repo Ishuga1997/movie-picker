@@ -99,7 +99,9 @@ function mergeFilters(participants: Participant[]) {
     ? uniqueServices.map((s) => STREAMING_PROVIDER_IDS[s]).join('|')
     : undefined
 
-  return { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds }
+  const watchRegions = [...new Set(participants.map((p) => p.watchRegion ?? 'GB'))]
+
+  return { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds, watchRegions }
 }
 
 async function fetchDiscover(
@@ -154,7 +156,7 @@ async function fetchDiscover(
   return results
 }
 
-async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
+async function fetchCreditsForMovie(movie: Movie, regions: string[]): Promise<Movie> {
   try {
     const endpoint = movie.mediaType === 'movie'
       ? `${BASE}/movie/${movie.id}?append_to_response=credits,watch%2Fproviders`
@@ -182,13 +184,19 @@ async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
       director = dir?.name as string | undefined
     }
 
-    const flatrate: Record<string, unknown>[] =
-      data['watch/providers']?.results?.US?.flatrate ?? []
-    const providers: StreamingProvider[] = flatrate.map((p) => ({
-      id: p.provider_id as number,
-      name: p.provider_name as string,
-      logoPath: p.logo_path as string,
-    }))
+    const watchResults = data['watch/providers']?.results ?? {}
+    const seenProviderIds = new Set<number>()
+    const providers: StreamingProvider[] = []
+    for (const region of regions) {
+      const flatrate: Record<string, unknown>[] = watchResults[region]?.flatrate ?? []
+      for (const p of flatrate) {
+        const id = p.provider_id as number
+        if (!seenProviderIds.has(id)) {
+          seenProviderIds.add(id)
+          providers.push({ id, name: p.provider_name as string, logoPath: p.logo_path as string })
+        }
+      }
+    }
 
     return { ...movie, cast, director, providers }
   } catch {
@@ -196,19 +204,19 @@ async function fetchCreditsForMovie(movie: Movie): Promise<Movie> {
   }
 }
 
-export async function enrichWithCredits(movies: Movie[]): Promise<Movie[]> {
-  return Promise.all(movies.map(fetchCreditsForMovie))
+export async function enrichWithCredits(movies: Movie[], regions: string[] = ['GB']): Promise<Movie[]> {
+  return Promise.all(movies.map((m) => fetchCreditsForMovie(m, regions)))
 }
 
 export async function fetchMovies(participants: Participant[]): Promise<Movie[]> {
-  const { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds } =
+  const { yearGte, yearLte, countryCodes, wantsMovie, wantsSeries, wantsAnimation, wantsLive, watchProviderIds, watchRegions } =
     mergeFilters(participants)
 
   // Resolve vibe → TMDB keyword IDs in parallel with nothing else blocking
   const vibeWords = extractVibeWords(participants.map((p) => p.vibe))
   const keywordIds = await resolveKeywordIds(vibeWords)
 
-  const buildParams = (isMovie: boolean): Record<string, string> => {
+  const buildParams = (isMovie: boolean, watchRegion?: string): Record<string, string> => {
     const p: Record<string, string> = {}
     if (yearGte) p[isMovie ? 'primary_release_date.gte' : 'first_air_date.gte'] = `${yearGte}-01-01`
     if (yearLte) p[isMovie ? 'primary_release_date.lte' : 'first_air_date.lte'] = `${yearLte}-12-31`
@@ -221,18 +229,26 @@ export async function fetchMovies(participants: Participant[]): Promise<Movie[]>
     // Keyword filter from vibe (OR logic — movie must match at least one keyword)
     if (keywordIds.length > 0) p['with_keywords'] = keywordIds.join('|')
 
-    // Streaming service filter
-    if (watchProviderIds) {
+    // Streaming service filter — requires a watch region
+    if (watchProviderIds && watchRegion) {
       p['with_watch_providers'] = watchProviderIds
-      p['watch_region'] = 'US'
+      p['watch_region'] = watchRegion
     }
 
     return p
   }
 
   const fetches: Promise<Movie[]>[] = []
-  if (wantsMovie) fetches.push(fetchDiscover('movie', buildParams(true), 3))
-  if (wantsSeries) fetches.push(fetchDiscover('tv', buildParams(false), 2))
+  if (watchProviderIds) {
+    // One batch per watch region, fewer pages to limit API calls
+    for (const region of watchRegions) {
+      if (wantsMovie) fetches.push(fetchDiscover('movie', buildParams(true, region), 2))
+      if (wantsSeries) fetches.push(fetchDiscover('tv', buildParams(false, region), 2))
+    }
+  } else {
+    if (wantsMovie) fetches.push(fetchDiscover('movie', buildParams(true), 3))
+    if (wantsSeries) fetches.push(fetchDiscover('tv', buildParams(false), 2))
+  }
 
   const arrays = await Promise.all(fetches)
   const all = arrays.flat()
@@ -241,12 +257,15 @@ export async function fetchMovies(participants: Participant[]): Promise<Movie[]>
   const MIN_RESULTS = 10
   if (all.length < MIN_RESULTS && keywordIds.length > 0) {
     const fallbackFetches: Promise<Movie[]>[] = []
-    const fallbackMovie = buildParams(true)
-    delete fallbackMovie['with_keywords']
-    const fallbackTv = buildParams(false)
-    delete fallbackTv['with_keywords']
-    if (wantsMovie) fallbackFetches.push(fetchDiscover('movie', fallbackMovie, 2))
-    if (wantsSeries) fallbackFetches.push(fetchDiscover('tv', fallbackTv, 1))
+    const fallbackRegions = watchProviderIds ? watchRegions : [undefined]
+    for (const region of fallbackRegions) {
+      const fbMovie = buildParams(true, region)
+      delete fbMovie['with_keywords']
+      const fbTv = buildParams(false, region)
+      delete fbTv['with_keywords']
+      if (wantsMovie) fallbackFetches.push(fetchDiscover('movie', fbMovie, region ? 1 : 2))
+      if (wantsSeries) fallbackFetches.push(fetchDiscover('tv', fbTv, 1))
+    }
     const fallback = (await Promise.all(fallbackFetches)).flat()
     all.push(...fallback)
   }
