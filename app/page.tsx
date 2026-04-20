@@ -219,11 +219,10 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [])
 
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (!open || e.key.length !== 1) return
+  function scrollToMatch(key: string) {
     const s = search.current
     if (s.timer) clearTimeout(s.timer)
-    s.text += e.key.toLowerCase()
+    s.text += key.toLowerCase()
     s.timer = setTimeout(() => { s.text = '' }, 800)
     const match = SORTED_REGIONS.find((r) => r.name.toLowerCase().startsWith(s.text))
     if (match) {
@@ -234,7 +233,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
   const selected = SORTED_REGIONS.find((r) => r.code === value) ?? SORTED_REGIONS[0]
 
   return (
-    <div ref={ref} className="relative inline-block" onKeyDown={handleKeyDown}>
+    <div ref={ref} className="relative inline-block">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -245,22 +244,36 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (code: st
         <span className="text-zinc-500 text-xs ml-0.5">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div ref={listRef} className="absolute left-0 top-full mt-1 z-50 w-64 max-h-72 overflow-y-auto rounded-xl bg-zinc-800 border border-zinc-700 shadow-xl">
-          {SORTED_REGIONS.map((r) => (
-            <button
-              key={r.code}
-              data-code={r.code}
-              type="button"
-              onClick={() => { onChange(r.code); setOpen(false) }}
-              className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700 transition-colors ${
-                r.code === value ? 'text-amber-500' : 'text-zinc-200'
-              }`}
-            >
-              <span className="text-base leading-none">{flagEmoji(r.code)}</span>
-              <span>{r.name}</span>
-            </button>
-          ))}
-        </div>
+        <>
+          {/* Hidden input captures keyboard so typeahead works regardless of which element has focus */}
+          <input
+            autoFocus
+            readOnly
+            value=""
+            className="sr-only"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') { setOpen(false); return }
+              if (e.key.length === 1) scrollToMatch(e.key)
+            }}
+          />
+          <div ref={listRef} className="absolute left-0 top-full mt-1 z-50 w-64 max-h-72 overflow-y-auto rounded-xl bg-zinc-800 border border-zinc-700 shadow-xl">
+            {SORTED_REGIONS.map((r) => (
+              <button
+                key={r.code}
+                data-code={r.code}
+                type="button"
+                onMouseDown={(e) => { e.preventDefault() }}
+                onClick={() => { onChange(r.code); setOpen(false) }}
+                className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-zinc-700 transition-colors ${
+                  r.code === value ? 'text-amber-500' : 'text-zinc-200'
+                }`}
+              >
+                <span className="text-base leading-none">{flagEmoji(r.code)}</span>
+                <span>{r.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
