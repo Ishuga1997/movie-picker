@@ -5,7 +5,7 @@ import { useSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { Participant, StreamingService } from './types'
 import {
-  TMDB_IMG, STREAMING_SERVICES, makeParticipant,
+  TMDB_IMG, WATCH_REGIONS, makeParticipant,
   ParticipantCard, WatchSection,
 } from './lib/filters'
 
@@ -38,10 +38,23 @@ export default function LandingPage() {
   const filtersRef = useRef<HTMLDivElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
+  // Fix 1: use rAF so DOM is fully painted before scrolling
   useEffect(() => {
-    if (screen === 'filters') filtersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    if (screen === 'results') resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const el = screen === 'filters' ? filtersRef.current : screen === 'results' ? resultsRef.current : null
+    if (!el) return
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }, [screen])
+
+  // Fix 3: auto-detect country via IP on first load
+  useEffect(() => {
+    fetch('/api/geo')
+      .then((r) => r.json())
+      .then(({ country }: { country: string }) => {
+        const validCode = WATCH_REGIONS.find((r) => r.code === country)?.code ?? 'US'
+        setWatchRegion(validCode)
+      })
+      .catch(() => {})
+  }, [])
 
   // If already logged in, CTA goes straight to app
   const handleHeroCTA = () => {
@@ -87,7 +100,7 @@ export default function LandingPage() {
                 <span className="text-amber-500">choosing what to watch?</span>
               </h1>
               <p className="text-lg text-zinc-400 leading-relaxed">
-                Tell Vibe Watch your mood — it considers everyone&apos;s preferences and finds the perfect watch for you and your crew in seconds.
+                Tell Vibe Watch your mood — it considers everyone&apos;s preferences and finds the perfect watch for you and your crew in seconds
               </p>
               <button onClick={handleHeroCTA} className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-amber-500 text-black font-semibold text-lg hover:bg-amber-400 transition-colors cursor-pointer">
                 Find my perfect watch →
@@ -114,12 +127,12 @@ export default function LandingPage() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-3">
               <div className="text-3xl">🎬</div>
               <h3 className="text-xl font-semibold">Watching alone?</h3>
-              <p className="text-zinc-400 leading-relaxed">Too many options that don&apos;t consider your mood. Just tell Vibe Watch what you&apos;re feeling — it picks movies that match exactly what you&apos;re looking for.</p>
+              <p className="text-zinc-400 leading-relaxed">Too many options that don&apos;t consider your mood. Just tell Vibe Watch what you&apos;re feeling — it picks movies that match exactly what you&apos;re looking for</p>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 space-y-3">
               <div className="text-3xl">👥</div>
               <h3 className="text-xl font-semibold">Watching with friends?</h3>
-              <p className="text-zinc-400 leading-relaxed">Everyone wants something different and you endlessly scroll streaming services. Vibe Watch considers everyone&apos;s preferences and finds movies you&apos;ll all enjoy.</p>
+              <p className="text-zinc-400 leading-relaxed">Everyone wants something different and you endlessly scroll streaming services. Vibe Watch considers everyone&apos;s preferences and finds movies you&apos;ll all enjoy</p>
             </div>
           </div>
         </main>
@@ -131,7 +144,7 @@ export default function LandingPage() {
           <div className="max-w-2xl mx-auto px-8 w-full space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold tracking-tight">What are you in the mood for?</h2>
-              <p className="text-zinc-500">Set your preferences and we&apos;ll find the perfect match.</p>
+              <p className="text-zinc-500">Set your preferences and we&apos;ll find the perfect match</p>
             </div>
             <ParticipantCard
               participant={participant}
@@ -163,7 +176,7 @@ export default function LandingPage() {
           <div className="max-w-5xl mx-auto px-8 w-full space-y-8">
             <div className="text-center space-y-2">
               <h2 className="text-3xl font-bold tracking-tight">We found your perfect picks!</h2>
-              <p className="text-zinc-500">Sign in to see your personalised results.</p>
+              <p className="text-zinc-500">Sign in to see your personalised results</p>
             </div>
 
             {/* Blurred cards with overlay */}
@@ -184,7 +197,7 @@ export default function LandingPage() {
                 <div className="text-center space-y-2">
                   <div className="text-4xl">🔒</div>
                   <p className="text-xl font-semibold text-zinc-100">Sign in to reveal your results</p>
-                  <p className="text-sm text-zinc-400">Your preferences are saved — no need to re-enter them.</p>
+                  <p className="text-sm text-zinc-400">Your preferences are saved — no need to re-enter them</p>
                 </div>
                 <button
                   onClick={handleSignIn}
