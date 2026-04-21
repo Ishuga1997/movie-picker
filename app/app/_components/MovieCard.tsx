@@ -26,7 +26,7 @@ function ProvidersSection({ providers, forceOpen }: { providers: NonNullable<Mov
       <button type="button" onClick={() => setOpen((v) => !v)} className="text-xs text-zinc-600 hover:text-amber-500 transition-colors cursor-pointer">
         Where to watch {open ? '▲' : '▼'}
       </button>
-      {open && (
+      <div className={`overflow-hidden transition-[max-height] duration-200 ease-in-out ${open ? 'max-h-40' : 'max-h-0'}`}>
         <div className="mt-2 flex flex-wrap gap-2">
           {deduped.map(({ provider: p, service }) => (
             <a key={service.id} href={service.url} target="_blank" rel="noopener noreferrer" title={p.name}
@@ -35,7 +35,7 @@ function ProvidersSection({ providers, forceOpen }: { providers: NonNullable<Mov
             </a>
           ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -60,8 +60,8 @@ export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoos
   const filteredProviders = (movie.providers ?? []).filter((p) => ALL_KNOWN_PROVIDER_IDS.has(p.id))
 
   return (
-    <div className={`bg-zinc-900 border rounded-2xl overflow-hidden flex flex-col transition-colors ${isChosen ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-zinc-800'}`}>
-      <div className="relative aspect-[2/3] bg-zinc-800">
+    <div className={`bg-zinc-900 border rounded-2xl flex flex-col transition-colors ${isChosen ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-zinc-800'}`}>
+      <div className="relative aspect-[2/3] bg-zinc-800 overflow-hidden rounded-t-2xl">
         {movie.posterPath ? (
           <img src={`${TMDB_IMG}${movie.posterPath}`} alt={movie.title} className="w-full h-full object-cover" />
         ) : (

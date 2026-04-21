@@ -160,6 +160,11 @@ export default function Home() {
     }
   }
 
+  const handleCleanAll = () => {
+    setAllMovies([]); setShownIds([]); setDismissedIds(new Set())
+    setAiRanked(null); setError(null); setChosenMovieId(null)
+  }
+
   // Auto-run search if redirected from landing page after sign-in
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage.getItem('vw-autorun') === 'true') {
@@ -275,15 +280,18 @@ export default function Home() {
         </WatchSection>
       </div>
 
-      <div className="mt-6 flex gap-3 items-center">
-        {participants.length < 5 && allMovies.length === 0 && (
+      <div className="mt-6 flex gap-3 items-center flex-wrap">
+        {participants.length < 5 && (
           <button type="button" onClick={() => setParticipants((prev) => [...prev, makeParticipant(String(Date.now()))])}
             className="px-5 py-2.5 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors cursor-pointer">
             + Add person
           </button>
         )}
         {allMovies.length > 0 ? (
-          <button type="button" onClick={handleFind} disabled={isLoading} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Search again</button>
+          <>
+            <button type="button" onClick={handleFind} disabled={isLoading} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Search again</button>
+            <button type="button" onClick={handleCleanAll} className="px-5 py-2.5 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300 transition-colors cursor-pointer">Clear all</button>
+          </>
         ) : (
           <button type="button" onClick={handleFind} disabled={isLoading}
             className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
@@ -294,10 +302,13 @@ export default function Home() {
         <button
           type="button"
           onClick={() => setSaveSearch((v) => !v)}
-          title={saveSearch ? 'Will save this search' : 'Save this search'}
-          className={`text-xl leading-none transition-colors cursor-pointer ${saveSearch ? 'text-amber-500' : 'text-zinc-600 hover:text-zinc-400'}`}
+          className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer border ${
+            saveSearch
+              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+              : 'bg-transparent text-zinc-500 border-zinc-700 hover:text-zinc-300 hover:border-zinc-500'
+          }`}
         >
-          {saveSearch ? '★' : '☆'}
+          {saveSearch ? '✓ Save search' : 'Save search'}
         </button>
 
         {watchedMovies.length > 0 && (
