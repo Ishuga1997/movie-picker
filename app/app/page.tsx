@@ -78,7 +78,14 @@ export default function Home() {
     setShownIds(newShown)
   }, [hideWatched]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Refs so handleFind always sees current values even in stale closures (autorun)
+  const watchedIdsRef = useRef(watchedIds)
+  const hideWatchedRef = useRef(hideWatched)
+  useEffect(() => { watchedIdsRef.current = watchedIds }, [watchedIds])
+  useEffect(() => { hideWatchedRef.current = hideWatched }, [hideWatched])
+
   const handleFind = async () => {
+    setChosenMovieId(null)
     setIsLoading(true)
     setError(null)
     setAiRanked(null)
@@ -103,12 +110,9 @@ export default function Home() {
       if (movies.length === 0) { setError('No movies found. Try broadening your preferences.'); return }
       setAiRanked(data.aiRanked ?? false)
       setAllMovies(movies)
-      // Read from localStorage directly to avoid stale closure
-      const storedWatched = new Set<number>(
-        JSON.parse(window.localStorage.getItem('vw-watched') ?? '[]').map((m: Movie) => m.id)
-      )
-      const hw = JSON.parse(window.localStorage.getItem('vw-hideWatched') ?? 'true') as boolean
-      const eligible = hw ? movies.filter((m) => !storedWatched.has(m.id)) : movies
+      const eligible = hideWatchedRef.current
+        ? movies.filter((m) => !watchedIdsRef.current.has(m.id))
+        : movies
       setShownIds(eligible.slice(0, 5).map((m) => m.id))
     } catch {
       setError('Something went wrong. Please try again.')
@@ -210,7 +214,7 @@ export default function Home() {
           </button>
         )}
         {allMovies.length > 0 ? (
-          <button type="button" onClick={handleReset} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors cursor-pointer">Reset</button>
+          <button type="button" onClick={handleFind} disabled={isLoading} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Search again</button>
         ) : (
           <button type="button" onClick={handleFind} disabled={isLoading}
             className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
