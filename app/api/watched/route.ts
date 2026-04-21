@@ -7,6 +7,7 @@ export async function GET() {
     const session = await auth()
     if (!session?.user?.id) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
+    console.log('[watched GET] userId:', session.user.id)
     const rows = await db.watchedMovie.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
 
     const movie: Movie = await request.json()
 
+    console.log('[watched POST] userId:', session.user.id)
     await db.watchedMovie.upsert({
       where: { userId_tmdbId: { userId: session.user.id, tmdbId: movie.id } },
       create: { userId: session.user.id, tmdbId: movie.id, movieData: movie as object },
