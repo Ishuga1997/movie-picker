@@ -18,6 +18,15 @@ model WatchedMovie {
   @@index([userId])
 }
 
+model SavedSearch {
+  id           String   @id @default(uuid())
+  userId       String
+  participants Json
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
 model UserPreferences {
   id              String   @id @default(uuid())
   userId          String   @unique

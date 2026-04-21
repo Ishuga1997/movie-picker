@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 const NAV_ITEMS = [
   { href: '/app', label: 'Main', exact: true },
   { href: '/app/watchlist', label: 'Watchlist', exact: false },
-  { href: '/app/history', label: 'History', exact: false },
+  { href: '/app/saved', label: 'Saved', exact: false },
   { href: '/app/watched', label: 'Watched', exact: false },
 ]
 

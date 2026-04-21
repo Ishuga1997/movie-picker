@@ -252,10 +252,11 @@ export function ParticipantCard({
 // ── WatchSection ──────────────────────────────────────────────────────────────
 
 export function WatchSection({
-  watchRegion, onChangeRegion, services, onToggleService, onClearServices,
+  watchRegion, onChangeRegion, services, onToggleService, onClearServices, children,
 }: {
   watchRegion: string; onChangeRegion: (code: string) => void
   services: StreamingService[]; onToggleService: (s: StreamingService) => void; onClearServices: () => void
+  children?: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
   return (
@@ -289,6 +290,7 @@ export function WatchSection({
               </Pill>
             ))}
           </div>
+          {children && <div className="px-4 pb-3">{children}</div>}
         </div>
       )}
     </div>

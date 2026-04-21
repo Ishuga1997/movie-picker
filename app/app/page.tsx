@@ -39,6 +39,7 @@ export default function Home() {
   const [hideWatched, setHideWatched] = useLocalStorage<boolean>('vw-hideWatched', true)
   const [savedDefaultServices, setSavedDefaultServices] = useState<StreamingService[]>([])
   const [saveAsDefault, setSaveAsDefault] = useState(false)
+  const [saveSearch, setSaveSearch] = useState(false)
 
   // Load watched, watchlist, and preferences from API on mount
   useEffect(() => {
@@ -113,6 +114,11 @@ export default function Home() {
   useEffect(() => { hideWatchedRef.current = hideWatched }, [hideWatched])
 
   const handleFind = async () => {
+    if (saveSearch) {
+      const toSave = participants.map(({ id, name, year, region, mediaType, contentType, vibe }) => ({ id, name, year, region, mediaType, contentType, vibe }))
+      fetch('/api/searches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ participants: toSave }) }).catch(() => {})
+      setSaveSearch(false)
+    }
     if (saveAsDefault && sharedServices.length > 0) {
       fetch('/api/preferences', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ services: sharedServices }) })
         .then((r) => r.ok ? setSavedDefaultServices([...sharedServices]) : null)
@@ -251,21 +257,22 @@ export default function Home() {
           services={sharedServices}
           onToggleService={(s) => setSharedServices((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])}
           onClearServices={() => setSharedServices([])}
-        />
-        {showSaveDefault && (
-          <label className="mt-3 flex items-center gap-2 cursor-pointer select-none" onClick={() => setSaveAsDefault((v) => !v)}>
-            <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${saveAsDefault ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-transparent'}`}>
-              {saveAsDefault && (
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                  <path d="M1 3.5L4 6.5L9 1" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              )}
-            </div>
-            <span className="text-xs text-zinc-500">
-              {savedDefaultServices.length === 0 ? 'Save as default' : 'Update default services'}
-            </span>
-          </label>
-        )}
+        >
+          {showSaveDefault && (
+            <label className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setSaveAsDefault((v) => !v)}>
+              <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${saveAsDefault ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-transparent'}`}>
+                {saveAsDefault && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 3.5L4 6.5L9 1" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </div>
+              <span className="text-xs text-zinc-500">
+                {savedDefaultServices.length === 0 ? 'Save as default' : 'Update default services'}
+              </span>
+            </label>
+          )}
+        </WatchSection>
       </div>
 
       <div className="mt-6 flex gap-3 items-center">
@@ -283,6 +290,15 @@ export default function Home() {
             {isLoading ? 'Searching...' : "Let's watch"}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => setSaveSearch((v) => !v)}
+          title={saveSearch ? 'Will save this search' : 'Save this search'}
+          className={`text-xl leading-none transition-colors cursor-pointer ${saveSearch ? 'text-amber-500' : 'text-zinc-600 hover:text-zinc-400'}`}
+        >
+          {saveSearch ? '★' : '☆'}
+        </button>
 
         {watchedMovies.length > 0 && (
           <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
