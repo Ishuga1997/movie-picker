@@ -18,8 +18,9 @@ function AppNav() {
   return (
     <nav className="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur border-b border-zinc-800">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
-        <Link href="/app" className="text-base font-bold tracking-tight text-zinc-100 shrink-0 hover:text-amber-500 transition-colors">
-          Vibe Watch
+        <Link href="/app" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+          <img src="/favicon.svg" alt="" className="w-7 h-7" />
+          <span className="text-base font-bold tracking-tight text-zinc-100">Vibe Watch</span>
         </Link>
 
         <div className="flex items-center gap-1 flex-1">
