@@ -134,7 +134,9 @@ export default function Home() {
 
   const handleChoose = (movie: Movie) => {
     setChosenMovieId(movie.id)
-    markWatched(movie)
+    // Add to watched without removing from feed
+    setWatchedMovies((prev) => [movie, ...prev.filter((m) => m.id !== movie.id)])
+    fetch('/api/watched', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(movie) }).catch(() => {})
   }
 
   const handleUnchoose = (movie: Movie) => {
