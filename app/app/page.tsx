@@ -37,8 +37,10 @@ export default function Home() {
   const [watchedMovies, setWatchedMovies] = useState<Movie[]>([])
   const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([])
   const [hideWatched, setHideWatched] = useLocalStorage<boolean>('vw-hideWatched', true)
+  const [savedDefaultServices, setSavedDefaultServices] = useState<StreamingService[]>([])
+  const [saveAsDefault, setSaveAsDefault] = useState(false)
 
-  // Load watched + watchlist from API on mount
+  // Load watched, watchlist, and preferences from API on mount
   useEffect(() => {
     fetch('/api/watched')
       .then((r) => r.ok ? r.json() : { movies: [] })
@@ -48,12 +50,32 @@ export default function Home() {
       .then((r) => r.ok ? r.json() : { movies: [] })
       .then(({ movies }: { movies: Movie[] }) => setWatchlistMovies(movies))
       .catch(() => {})
+    fetch('/api/preferences')
+      .then((r) => r.ok ? r.json() : { services: [] })
+      .then(({ services }: { services: StreamingService[] }) => {
+        setSavedDefaultServices(services)
+        // Apply saved defaults if no services selected locally
+        if (services.length > 0) {
+          setSharedServices((prev) => prev.length === 0 ? services : prev)
+        }
+      })
+      .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissedIds = new Set(dismissedArray)
   const setDismissedIds = (next: Set<number>) => setDismissedArray([...next])
   const watchedIds = new Set(watchedMovies.map((m) => m.id))
   const watchlistIds = new Set(watchlistMovies.map((m) => m.id))
+
+  const servicesMatchDefaults =
+    sharedServices.length === savedDefaultServices.length &&
+    sharedServices.every((s) => savedDefaultServices.includes(s))
+  const showSaveDefault = sharedServices.length > 0 && !servicesMatchDefaults
+
+  // Auto-check "Save as default" only on first-ever selection (no saved defaults)
+  useEffect(() => {
+    if (showSaveDefault) setSaveAsDefault(savedDefaultServices.length === 0)
+  }, [showSaveDefault]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [chosenMovieId, setChosenMovieId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -91,6 +113,11 @@ export default function Home() {
   useEffect(() => { hideWatchedRef.current = hideWatched }, [hideWatched])
 
   const handleFind = async () => {
+    if (saveAsDefault && sharedServices.length > 0) {
+      fetch('/api/preferences', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ services: sharedServices }) })
+        .then((r) => r.ok ? setSavedDefaultServices([...sharedServices]) : null)
+        .catch(() => {})
+    }
     setChosenMovieId(null)
     setIsLoading(true)
     setError(null)
@@ -225,6 +252,20 @@ export default function Home() {
           onToggleService={(s) => setSharedServices((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])}
           onClearServices={() => setSharedServices([])}
         />
+        {showSaveDefault && (
+          <label className="mt-3 flex items-center gap-2 cursor-pointer select-none" onClick={() => setSaveAsDefault((v) => !v)}>
+            <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-colors ${saveAsDefault ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 bg-transparent'}`}>
+              {saveAsDefault && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 3.5L4 6.5L9 1" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </div>
+            <span className="text-xs text-zinc-500">
+              {savedDefaultServices.length === 0 ? 'Save as default' : 'Update default services'}
+            </span>
+          </label>
+        )}
       </div>
 
       <div className="mt-6 flex gap-3 items-center">

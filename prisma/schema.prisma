@@ -18,6 +18,13 @@ model WatchedMovie {
   @@index([userId])
 }
 
+model UserPreferences {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  defaultServices String[]
+  updatedAt       DateTime @updatedAt
+}
+
 model WatchlistMovie {
   id        String   @id @default(uuid())
   userId    String
