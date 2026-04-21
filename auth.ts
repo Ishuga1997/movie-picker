@@ -12,6 +12,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/signin',
   },
   callbacks: {
+    jwt({ token, account }) {
+      // On first sign-in, store stable Google account ID
+      if (account?.providerAccountId) {
+        token.sub = account.providerAccountId
+      }
+      return token
+    },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub
       return session
