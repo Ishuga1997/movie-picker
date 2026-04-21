@@ -11,7 +11,7 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return Response.json({ movies: rows.map((r) => r.movieData as Movie) })
+  return Response.json({ movies: rows.map((r) => r.movieData as unknown as Movie) })
 }
 
 export async function POST(request: Request) {
