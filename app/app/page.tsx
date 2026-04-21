@@ -34,8 +34,16 @@ export default function Home() {
   const [shownIds, setShownIds] = useLocalStorage<number[]>('vw-shown', [])
   const [dismissedArray, setDismissedArray] = useLocalStorage<number[]>('vw-dismissed', [])
   const [aiRanked, setAiRanked] = useLocalStorage<boolean | null>('vw-aiRanked', null)
-  const [watchedMovies, setWatchedMovies] = useLocalStorage<Movie[]>('vw-watched', [])
+  const [watchedMovies, setWatchedMovies] = useState<Movie[]>([])
   const [hideWatched, setHideWatched] = useLocalStorage<boolean>('vw-hideWatched', true)
+
+  // Load watched from API on mount
+  useEffect(() => {
+    fetch('/api/watched')
+      .then((r) => r.ok ? r.json() : { movies: [] })
+      .then(({ movies }: { movies: Movie[] }) => setWatchedMovies(movies))
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissedIds = new Set(dismissedArray)
   const setDismissedIds = (next: Set<number>) => setDismissedArray([...next])
@@ -124,6 +132,7 @@ export default function Home() {
 
   const markWatched = (movie: Movie) => {
     setWatchedMovies((prev) => [movie, ...prev.filter((m) => m.id !== movie.id)])
+    fetch('/api/watched', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(movie) }).catch(() => {})
     const newWatchedIds = new Set([...watchedIds, movie.id])
     const newShown = shownIds.filter((id) => id !== movie.id)
     const excluded = new Set([...dismissedIds, ...(hideWatched ? [...newWatchedIds] : [movie.id]), ...newShown])
@@ -144,6 +153,7 @@ export default function Home() {
 
   const unwatch = (movieId: number) => {
     setWatchedMovies((prev) => prev.filter((m) => m.id !== movieId))
+    fetch('/api/watched', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId: movieId }) }).catch(() => {})
   }
 
   const shownMovies = shownIds.map((id) => allMovies.find((m) => m.id === id)).filter(Boolean) as Movie[]

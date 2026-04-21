@@ -2,41 +2,52 @@
 
 import { useState, useEffect } from 'react'
 import type { Movie } from '../../types'
+import type { YearFilter } from '../../types'
+import { YearFilterControl } from '../../lib/filters'
 import { MovieCard } from '../_components/MovieCard'
 
-function useWatchedMovies(): [Movie[], (updater: (prev: Movie[]) => Movie[]) => void] {
-  const [watched, setWatched] = useState<Movie[]>(() => {
-    if (typeof window === 'undefined') return []
-    try {
-      const item = window.localStorage.getItem('vw-watched')
-      return item ? (JSON.parse(item) as Movie[]) : []
-    } catch { return [] }
-  })
-  useEffect(() => {
-    try { window.localStorage.setItem('vw-watched', JSON.stringify(watched)) } catch {}
-  }, [watched])
-  return [watched, setWatched]
-}
-
 export default function WatchedPage() {
-  const [watchedMovies, setWatchedMovies] = useWatchedMovies()
+  const [watchedMovies, setWatchedMovies] = useState<Movie[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/watched')
+      .then((r) => r.ok ? r.json() : { movies: [] })
+      .then(({ movies }: { movies: Movie[] }) => setWatchedMovies(movies))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   const [titleFilter, setTitleFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'movie' | 'series'>('all')
-  const [yearFrom, setYearFrom] = useState('')
-  const [yearTo, setYearTo] = useState('')
+  const [yearFilter, setYearFilter] = useState<YearFilter>({ mode: 'any' })
 
   const unwatch = (movieId: number) => {
     setWatchedMovies((prev) => prev.filter((m) => m.id !== movieId))
+    fetch('/api/watched', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId: movieId }) }).catch(() => {})
   }
 
   const filtered = watchedMovies.filter((m) => {
     if (titleFilter && !m.title.toLowerCase().includes(titleFilter.toLowerCase())) return false
     if (typeFilter !== 'all' && m.mediaType !== typeFilter) return false
-    if (yearFrom && m.year < parseInt(yearFrom)) return false
-    if (yearTo && m.year > parseInt(yearTo)) return false
+    if (yearFilter.mode === 'from' && yearFilter.from != null && m.year < yearFilter.from) return false
+    if (yearFilter.mode === 'to' && yearFilter.to != null && m.year > yearFilter.to) return false
+    if (yearFilter.mode === 'range') {
+      if (yearFilter.from != null && m.year < yearFilter.from) return false
+      if (yearFilter.to != null && m.year > yearFilter.to) return false
+    }
+    if (yearFilter.mode === 'exact' && yearFilter.exact != null && m.year !== yearFilter.exact) return false
     return true
   })
+
+  if (loading) return (
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-zinc-100 mb-1">Watched</h1>
+      </div>
+      <div className="text-center py-24 text-zinc-600 text-sm">Loading…</div>
+    </div>
+  )
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -70,28 +81,12 @@ export default function WatchedPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="number"
-              placeholder="From year"
-              value={yearFrom}
-              onChange={(e) => setYearFrom(e.target.value)}
-              className="w-24 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
-            />
-            <span className="text-zinc-600 text-sm">–</span>
-            <input
-              type="number"
-              placeholder="To year"
-              value={yearTo}
-              onChange={(e) => setYearTo(e.target.value)}
-              className="w-24 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
-            />
-          </div>
+          <YearFilterControl year={yearFilter} onChange={setYearFilter} />
 
-          {(titleFilter || typeFilter !== 'all' || yearFrom || yearTo) && (
+          {(titleFilter || typeFilter !== 'all' || yearFilter.mode !== 'any') && (
             <button
               type="button"
-              onClick={() => { setTitleFilter(''); setTypeFilter('all'); setYearFrom(''); setYearTo('') }}
+              onClick={() => { setTitleFilter(''); setTypeFilter('all'); setYearFilter({ mode: 'any' }) }}
               className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
             >
               Clear filters
