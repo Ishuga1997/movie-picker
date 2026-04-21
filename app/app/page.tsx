@@ -49,6 +49,7 @@ export default function Home() {
   const setDismissedIds = (next: Set<number>) => setDismissedArray([...next])
   const watchedIds = new Set(watchedMovies.map((m) => m.id))
 
+  const [chosenMovieId, setChosenMovieId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -127,7 +128,18 @@ export default function Home() {
   const handleReset = () => {
     setAllMovies([]); setShownIds([]); setDismissedIds(new Set())
     setAiRanked(null); setError(null); setSharedServices([])
+    setChosenMovieId(null)
     setParticipants((prev) => prev.map((p) => makeParticipant(p.id, p.name)))
+  }
+
+  const handleChoose = (movie: Movie) => {
+    setChosenMovieId(movie.id)
+    markWatched(movie)
+  }
+
+  const handleUnchoose = (movie: Movie) => {
+    setChosenMovieId(null)
+    unwatch(movie.id)
   }
 
   const markWatched = (movie: Movie) => {
@@ -237,9 +249,13 @@ export default function Home() {
                 key={movie.id}
                 movie={movie}
                 isWatched={watchedIds.has(movie.id)}
+                isChosen={chosenMovieId === movie.id}
+                hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
                 onMarkWatched={() => markWatched(movie)}
                 onUnwatch={() => unwatch(movie.id)}
                 onSkip={() => markDismissed(movie.id)}
+                onChoose={() => handleChoose(movie)}
+                onUnchoose={() => handleUnchoose(movie)}
               />
             ))}
           </div>
