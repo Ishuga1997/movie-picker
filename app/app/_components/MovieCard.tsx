@@ -105,18 +105,26 @@ export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoos
           </div>
         )}
 
-        {filteredProviders.length > 0 && (
-          <ProvidersSection providers={filteredProviders} forceOpen={isChosen} />
-        )}
+        <div className="mt-auto flex flex-col gap-2">
+          {isChosen ? (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
+              <p className="text-sm font-semibold text-amber-400">Tonight&apos;s pick!</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Enjoy the show</p>
+            </div>
+          ) : (
+            !hideChoose && onChoose && (
+              <button type="button" onClick={onChoose}
+                className="w-full py-2 rounded-lg text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors cursor-pointer">
+                Choose this
+              </button>
+            )
+          )}
 
-        {isChosen && (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-center">
-            <p className="text-sm font-semibold text-amber-400">Tonight&apos;s pick!</p>
-            <p className="text-xs text-zinc-500 mt-0.5">Enjoy the show</p>
-          </div>
-        )}
+          {filteredProviders.length > 0 && (
+            <ProvidersSection providers={filteredProviders} forceOpen={isChosen} />
+          )}
 
-        <div className="mt-auto pt-3 flex flex-col gap-1.5">
+          <div className="pt-1 flex flex-col gap-1.5">
           {isChosen ? (
             onUnchoose && (
               <button type="button" onClick={onUnchoose}
@@ -126,12 +134,6 @@ export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoos
             )
           ) : (
             <>
-              {!hideChoose && onChoose && (
-                <button type="button" onClick={onChoose}
-                  className="py-2 rounded-lg text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors cursor-pointer">
-                  Choose this
-                </button>
-              )}
               {onToggleWatchlist && (
                 <button type="button" onClick={onToggleWatchlist}
                   className={`py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
@@ -165,6 +167,7 @@ export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoos
               )}
             </>
           )}
+          </div>
         </div>
       </div>
     </div>
