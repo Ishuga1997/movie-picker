@@ -44,15 +44,17 @@ interface MovieCardProps {
   movie: Movie
   isWatched?: boolean
   isChosen?: boolean
+  isWatchlisted?: boolean
   hideChoose?: boolean
   onMarkWatched?: () => void
   onUnwatch?: () => void
   onSkip?: () => void
   onChoose?: () => void
   onUnchoose?: () => void
+  onToggleWatchlist?: () => void
 }
 
-export function MovieCard({ movie, isWatched, isChosen, hideChoose, onMarkWatched, onUnwatch, onSkip, onChoose, onUnchoose }: MovieCardProps) {
+export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoose, onMarkWatched, onUnwatch, onSkip, onChoose, onUnchoose, onToggleWatchlist }: MovieCardProps) {
   const [expanded, setExpanded] = useState(false)
 
   const filteredProviders = (movie.providers ?? []).filter((p) => ALL_KNOWN_PROVIDER_IDS.has(p.id))
@@ -128,6 +130,16 @@ export function MovieCard({ movie, isWatched, isChosen, hideChoose, onMarkWatche
                 <button type="button" onClick={onChoose}
                   className="py-2 rounded-lg text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-colors cursor-pointer">
                   Choose this
+                </button>
+              )}
+              {onToggleWatchlist && (
+                <button type="button" onClick={onToggleWatchlist}
+                  className={`py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    isWatchlisted
+                      ? 'bg-zinc-800 text-amber-500/70 hover:bg-amber-900/30 hover:text-amber-400'
+                      : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-300'
+                  }`}>
+                  {isWatchlisted ? 'Remove from watchlist' : 'Watch later'}
                 </button>
               )}
               {isWatched ? (

@@ -35,19 +35,25 @@ export default function Home() {
   const [dismissedArray, setDismissedArray] = useLocalStorage<number[]>('vw-dismissed', [])
   const [aiRanked, setAiRanked] = useLocalStorage<boolean | null>('vw-aiRanked', null)
   const [watchedMovies, setWatchedMovies] = useState<Movie[]>([])
+  const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([])
   const [hideWatched, setHideWatched] = useLocalStorage<boolean>('vw-hideWatched', true)
 
-  // Load watched from API on mount
+  // Load watched + watchlist from API on mount
   useEffect(() => {
     fetch('/api/watched')
       .then((r) => r.ok ? r.json() : { movies: [] })
       .then(({ movies }: { movies: Movie[] }) => setWatchedMovies(movies))
+      .catch(() => {})
+    fetch('/api/watchlist')
+      .then((r) => r.ok ? r.json() : { movies: [] })
+      .then(({ movies }: { movies: Movie[] }) => setWatchlistMovies(movies))
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dismissedIds = new Set(dismissedArray)
   const setDismissedIds = (next: Set<number>) => setDismissedArray([...next])
   const watchedIds = new Set(watchedMovies.map((m) => m.id))
+  const watchlistIds = new Set(watchlistMovies.map((m) => m.id))
 
   const [chosenMovieId, setChosenMovieId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -141,6 +147,21 @@ export default function Home() {
     // Add to watched without removing from feed
     setWatchedMovies((prev) => [movie, ...prev.filter((m) => m.id !== movie.id)])
     fetch('/api/watched', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(movie) }).catch(() => {})
+    // Remove from watchlist if present
+    if (watchlistIds.has(movie.id)) {
+      setWatchlistMovies((prev) => prev.filter((m) => m.id !== movie.id))
+      fetch('/api/watchlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId: movie.id }) }).catch(() => {})
+    }
+  }
+
+  const toggleWatchlist = (movie: Movie) => {
+    if (watchlistIds.has(movie.id)) {
+      setWatchlistMovies((prev) => prev.filter((m) => m.id !== movie.id))
+      fetch('/api/watchlist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tmdbId: movie.id }) }).catch(() => {})
+    } else {
+      setWatchlistMovies((prev) => [movie, ...prev.filter((m) => m.id !== movie.id)])
+      fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(movie) }).catch(() => {})
+    }
   }
 
   const handleUnchoose = (movie: Movie) => {
@@ -256,12 +277,14 @@ export default function Home() {
                 movie={movie}
                 isWatched={watchedIds.has(movie.id)}
                 isChosen={chosenMovieId === movie.id}
+                isWatchlisted={watchlistIds.has(movie.id)}
                 hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
                 onMarkWatched={() => markWatched(movie)}
                 onUnwatch={() => unwatch(movie.id)}
                 onSkip={() => markDismissed(movie.id)}
                 onChoose={() => handleChoose(movie)}
                 onUnchoose={() => handleUnchoose(movie)}
+                onToggleWatchlist={() => toggleWatchlist(movie)}
               />
             ))}
           </div>

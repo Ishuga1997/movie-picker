@@ -17,3 +17,14 @@ model WatchedMovie {
   @@unique([userId, tmdbId])
   @@index([userId])
 }
+
+model WatchlistMovie {
+  id        String   @id @default(uuid())
+  userId    String
+  tmdbId    Int
+  movieData Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, tmdbId])
+  @@index([userId])
+}
