@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
 import type { Participant, Movie, StreamingService } from '../types'
 import {
   STREAMING_SERVICES, ALL_KNOWN_PROVIDER_IDS, WATCH_REGIONS,
-  makeParticipant, Pill, ParticipantCard, WatchSection, TMDB_IMG, TMDB_LOGO,
+  makeParticipant, ParticipantCard, WatchSection, TMDB_IMG, TMDB_LOGO,
 } from '../lib/filters'
 
 // ── Movie card ───────────────────────────────────────────────────────────────
@@ -107,17 +106,6 @@ function useLocalStorage<T>(key: string, initial: T): [T, React.Dispatch<React.S
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-function UserHeader() {
-  const { data: session } = useSession()
-  if (!session?.user) return null
-  return (
-    <div className="flex items-center gap-2">
-      {session.user.image && <img src={session.user.image} alt="" className="w-7 h-7 rounded-full" />}
-      <span className="text-sm text-zinc-400">{session.user.name ?? session.user.email}</span>
-      <button type="button" onClick={() => signOut({ callbackUrl: '/signin' })} className="text-sm text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer">Sign out</button>
-    </div>
-  )
-}
 
 export default function Home() {
   const [participants, setParticipants] = useLocalStorage<Participant[]>('vw-participants', [makeParticipant('1')])
@@ -205,14 +193,10 @@ export default function Home() {
   const reserveCount = allMovies.filter((m) => !shownIds.includes(m.id) && !dismissedIds.has(m.id)).length
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <header className="mb-10">
-          <div className="flex justify-end mb-6"><UserHeader /></div>
-          <div className="text-center">
+    <div className="max-w-5xl mx-auto px-4 py-12">
+        <header className="mb-10 text-center">
             <h1 className="text-4xl font-bold tracking-tight text-zinc-100">Vibe Watch</h1>
             <p className="mt-2 text-zinc-500 text-base">Great picks for every vibe in the room</p>
-          </div>
         </header>
 
         <div className="space-y-4">
@@ -273,7 +257,6 @@ export default function Home() {
             )}
           </section>
         )}
-      </div>
     </div>
   )
 }
