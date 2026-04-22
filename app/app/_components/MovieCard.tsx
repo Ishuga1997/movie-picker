@@ -1,16 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import type { Movie } from '../../types'
 import { STREAMING_SERVICES, ALL_KNOWN_PROVIDER_IDS, TMDB_IMG, TMDB_LOGO } from '../../lib/filters'
 
-function ProvidersSection({ providers, forceOpen }: { providers: NonNullable<Movie['providers']>; forceOpen?: boolean }) {
-  const [open, setOpen] = useState(false)
+function ProvidersSection({
+  providers,
+  open,
+  onToggle,
+  animRef,
+}: {
+  providers: NonNullable<Movie['providers']>
+  open: boolean
+  onToggle: () => void
+  animRef: React.RefObject<HTMLDivElement>
+}) {
   const seenServices = new Set<string>()
-
-  useEffect(() => {
-    if (forceOpen) setOpen(true)
-  }, [forceOpen])
 
   const deduped = providers.reduce<{ provider: typeof providers[number]; service: typeof STREAMING_SERVICES[number] }[]>((acc, p) => {
     const service = STREAMING_SERVICES.find((s) => s.providerIds.includes(p.id))
@@ -23,10 +28,10 @@ function ProvidersSection({ providers, forceOpen }: { providers: NonNullable<Mov
   if (deduped.length === 0) return null
   return (
     <div className="border-t border-zinc-800 pt-2">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="text-xs text-zinc-600 hover:text-amber-500 transition-colors cursor-pointer">
+      <button type="button" onClick={onToggle} className="text-xs text-zinc-600 hover:text-amber-500 transition-colors cursor-pointer">
         Where to watch {open ? '▲' : '▼'}
       </button>
-      <div className={`overflow-hidden transition-[max-height] duration-200 ease-in-out ${open ? 'max-h-40' : 'max-h-0'}`}>
+      <div ref={animRef} className={`overflow-hidden transition-[max-height] duration-200 ease-in-out ${open ? 'max-h-40' : 'max-h-0'}`}>
         <div className="mt-2 flex flex-wrap gap-2">
           {deduped.map(({ provider: p, service }) => (
             <a key={service.id} href={service.url} target="_blank" rel="noopener noreferrer" title={p.name}
@@ -56,11 +61,31 @@ interface MovieCardProps {
 
 export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoose, onMarkWatched, onUnwatch, onSkip, onChoose, onUnchoose, onToggleWatchlist }: MovieCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [providersOpen, setProvidersOpen] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const animRef = useRef<HTMLDivElement>(null)
 
   const filteredProviders = (movie.providers ?? []).filter((p) => ALL_KNOWN_PROVIDER_IDS.has(p.id))
 
+  // Open providers automatically when movie is chosen
+  useEffect(() => {
+    if (isChosen) setProvidersOpen(true)
+  }, [isChosen])
+
+  // Set card minHeight to prevent "Choose this" from jumping when providers expand
+  useLayoutEffect(() => {
+    const card = cardRef.current
+    const anim = animRef.current
+    if (!card || !anim) return
+    if (providersOpen) {
+      card.style.minHeight = (card.clientHeight + anim.scrollHeight) + 'px'
+    } else {
+      card.style.minHeight = ''
+    }
+  }, [providersOpen])
+
   return (
-    <div className={`bg-zinc-900 border rounded-2xl flex flex-col transition-colors ${isChosen ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-zinc-800'}`}>
+    <div ref={cardRef} className={`bg-zinc-900 border rounded-2xl flex flex-col transition-colors ${isChosen ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-zinc-800'}`}>
       <div className="relative aspect-[2/3] bg-zinc-800 overflow-hidden rounded-t-2xl">
         {movie.posterPath ? (
           <img src={`${TMDB_IMG}${movie.posterPath}`} alt={movie.title} className="w-full h-full object-cover" />
@@ -121,7 +146,12 @@ export function MovieCard({ movie, isWatched, isChosen, isWatchlisted, hideChoos
           )}
 
           {filteredProviders.length > 0 && (
-            <ProvidersSection providers={filteredProviders} forceOpen={isChosen} />
+            <ProvidersSection
+              providers={filteredProviders}
+              open={providersOpen}
+              onToggle={() => setProvidersOpen((v) => !v)}
+              animRef={animRef}
+            />
           )}
 
           <div className="pt-1 flex flex-col gap-1.5">

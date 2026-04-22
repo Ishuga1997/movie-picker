@@ -163,6 +163,7 @@ export default function Home() {
   const handleCleanAll = () => {
     setAllMovies([]); setShownIds([]); setDismissedIds(new Set())
     setAiRanked(null); setError(null); setChosenMovieId(null)
+    setParticipants([makeParticipant('1')])
   }
 
   // Auto-run search if redirected from landing page after sign-in
@@ -280,13 +281,16 @@ export default function Home() {
         </WatchSection>
       </div>
 
-      <div className="mt-6 flex gap-3 items-center flex-wrap">
-        {participants.length < 5 && (
+      {participants.length < 5 && (
+        <div className="mt-4">
           <button type="button" onClick={() => setParticipants((prev) => [...prev, makeParticipant(String(Date.now()))])}
             className="px-5 py-2.5 rounded-xl text-sm font-medium bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors cursor-pointer">
             + Add person
           </button>
-        )}
+        </div>
+      )}
+
+      <div className="mt-4 flex gap-3 items-center flex-wrap">
         {allMovies.length > 0 ? (
           <>
             <button type="button" onClick={handleFind} disabled={isLoading} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-zinc-700 text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">Search again</button>
