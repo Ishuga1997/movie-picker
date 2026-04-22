@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Participant } from '../../types'
+import type { Participant, Region } from '../../types'
 import { makeParticipant } from '../../lib/filters'
 
-type StoredParticipant = Pick<Participant, 'id' | 'name' | 'year' | 'region' | 'mediaType' | 'contentType' | 'vibe'>
+type StoredParticipant = Pick<Participant, 'id' | 'name' | 'year' | 'regions' | 'mediaType' | 'contentType' | 'vibe'> & { region?: string }
 
 interface SavedSearch {
   id: string
@@ -23,7 +23,8 @@ function filterSummary(p: StoredParticipant): string {
   else if (p.year.mode === 'to' && p.year.to) parts.push(`Until ${p.year.to}`)
   else if (p.year.mode === 'range') parts.push(`${p.year.from ?? '?'}–${p.year.to ?? '?'}`)
   else if (p.year.mode === 'exact' && p.year.exact) parts.push(String(p.year.exact))
-  if (p.region !== 'any') parts.push(REGION_LABELS[p.region] ?? p.region)
+  const regionList = p.regions?.length ? p.regions : (p.region && p.region !== 'any' ? [p.region] : [])
+  if (regionList.length > 0) parts.push(regionList.map((r) => REGION_LABELS[r] ?? r).join(' / '))
   if (p.mediaType !== 'any') parts.push(p.mediaType === 'movie' ? 'Movie' : 'Series')
   if (p.contentType !== 'any') parts.push(p.contentType === 'live' ? 'Live-action' : 'Animation')
   return parts.join(' · ')
@@ -51,7 +52,7 @@ export default function SavedPage() {
     const participants: Participant[] = search.participants.map((p, i) => ({
       ...makeParticipant(p.id ?? String(i + 1), p.name),
       year: p.year,
-      region: p.region,
+      regions: p.regions ?? (p.region && p.region !== 'any' ? [p.region as Region] : []),
       mediaType: p.mediaType,
       contentType: p.contentType,
       vibe: p.vibe ?? '',

@@ -47,7 +47,7 @@ export const WATCH_REGIONS = [
 export const SORTED_REGIONS = [...WATCH_REGIONS].sort((a, b) => a.name.localeCompare(b.name))
 
 export function makeParticipant(id: string, name?: string): Participant {
-  return { id, name, year: { mode: 'any' }, region: 'any', mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion: 'US', vibe: '' }
+  return { id, name, year: { mode: 'any' }, regions: [], mediaType: 'any', contentType: 'any', streamingServices: [], watchRegion: 'US', vibe: '' }
 }
 
 export function flagEmoji(code: string) {
@@ -184,10 +184,15 @@ export function ParticipantCard({
   participant: Participant; index: number
   onChange: (p: Participant) => void; onRemove: () => void; canRemove: boolean
 }) {
-  const regions: { value: Region; label: string }[] = [
-    { value: 'any', label: 'Anywhere' }, { value: 'usa_uk', label: 'USA / UK' },
-    { value: 'europe', label: 'Europe' }, { value: 'asia', label: 'Asia' }, { value: 'india', label: 'India' },
+  const regionOptions: { value: Region; label: string }[] = [
+    { value: 'usa_uk', label: 'USA / UK' }, { value: 'europe', label: 'Europe' },
+    { value: 'asia', label: 'Asia' }, { value: 'india', label: 'India' },
   ]
+  const toggleRegion = (r: Region) => {
+    const cur = participant.regions
+    const next = cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]
+    onChange({ ...participant, regions: next })
+  }
   const mediaTypes: { value: MediaType; label: string }[] = [
     { value: 'any', label: 'Either' }, { value: 'movie', label: 'Movie' }, { value: 'series', label: 'Series' },
   ]
@@ -224,7 +229,10 @@ export function ParticipantCard({
       <div className="space-y-1">
         <label className="text-xs text-zinc-500 uppercase tracking-wide">Region</label>
         <div className="flex flex-wrap gap-2">
-          {regions.map((r) => <Pill key={r.value} active={participant.region === r.value} onClick={() => onChange({ ...participant, region: r.value })}>{r.label}</Pill>)}
+          <Pill active={participant.regions.length === 0} onClick={() => onChange({ ...participant, regions: [] })}>Anywhere</Pill>
+          {regionOptions.map((r) => (
+            <Pill key={r.value} active={participant.regions.includes(r.value)} onClick={() => toggleRegion(r.value)}>{r.label}</Pill>
+          ))}
         </div>
       </div>
       <div className="space-y-3">

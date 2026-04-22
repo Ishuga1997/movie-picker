@@ -25,7 +25,7 @@ export async function rankMovies(movies: Movie[], participants: Participant[]): 
         else if (p.year.mode === 'exact') parts.push(`Year: exactly ${p.year.exact}`)
       }
 
-      if (p.region !== 'any') parts.push(`Region: ${REGION_LABELS[p.region]}`)
+      if (p.regions.length > 0) parts.push(`Region: ${p.regions.map((r) => REGION_LABELS[r] ?? r).join(', ')}`)
       if (p.mediaType === 'movie') parts.push('Type: movie')
       else if (p.mediaType === 'series') parts.push('Type: TV series')
       if (p.contentType === 'animation') parts.push('Genre: animation/anime')

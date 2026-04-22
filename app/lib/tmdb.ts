@@ -82,7 +82,7 @@ function mergeFilters(participants: Participant[]) {
     }
   }
 
-  const selectedRegions = participants.map((p) => p.region).filter((r) => r !== 'any')
+  const selectedRegions = participants.flatMap((p) => p.regions ?? [])
   const countryCodes =
     selectedRegions.length === 0
       ? undefined
