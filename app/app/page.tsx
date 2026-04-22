@@ -407,59 +407,65 @@ export default function Home() {
               <span className="text-xs text-amber-500/70 border border-amber-500/30 rounded-full px-2.5 py-0.5">sorted by rating · AI unavailable</span>
             )}
           </div>
-          <div
-            ref={scrollRef}
-            onScroll={handleMovieScroll}
-            className="flex gap-4 overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {scrollableMovies.map((movie) => (
-              <div
-                key={movie.id}
-                className="shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
-              >
-                <MovieCard
-                  movie={movie}
-                  isWatched={watchedIds.has(movie.id)}
-                  isChosen={chosenMovieId === movie.id}
-                  isWatchlisted={watchlistIds.has(movie.id)}
-                  hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
-                  onMarkWatched={() => markWatched(movie)}
-                  onUnwatch={() => unwatch(movie.id)}
-                  onSkip={() => markDismissed(movie.id)}
-                  onChoose={() => handleChoose(movie)}
-                  onUnchoose={() => handleUnchoose(movie)}
-                  onToggleWatchlist={() => toggleWatchlist(movie)}
-                />
-              </div>
-            ))}
-          </div>
-
-          {(cardScrollIndex > 0 || canScrollRight) && (
-            <div className="mt-3 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                {cardScrollIndex > 0 && (
-                  <>
-                    <button type="button" onClick={scrollMoviesLeft}
-                      className="text-zinc-600 hover:text-zinc-400 transition-colors text-xl leading-none cursor-pointer">
-                      ‹
+          <div className="flex items-stretch gap-2">
+            {/* Left arrow column — always reserves width to avoid layout shift */}
+            <div className="w-5 shrink-0 flex flex-col justify-center items-center gap-1">
+              {cardScrollIndex > 0 && (
+                <>
+                  <button type="button" onClick={scrollMoviesLeft}
+                    className="text-zinc-600 hover:text-zinc-400 transition-colors text-2xl leading-none cursor-pointer">
+                    ‹
+                  </button>
+                  {cardScrollIndex >= 3 && (
+                    <button type="button" onClick={scrollToMovieStart}
+                      className="text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors cursor-pointer leading-tight text-center">
+                      ↩<br />start
                     </button>
-                    {cardScrollIndex >= 3 && (
-                      <button type="button" onClick={scrollToMovieStart}
-                        className="text-xs text-zinc-700 hover:text-zinc-500 transition-colors cursor-pointer">
-                        ↩ start
-                      </button>
-                    )}
-                  </>
-                )}
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Scrollable cards */}
+            <div className="flex-1 overflow-hidden">
+              <div
+                ref={scrollRef}
+                onScroll={handleMovieScroll}
+                className="flex gap-4 overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {scrollableMovies.map((movie) => (
+                  <div
+                    key={movie.id}
+                    className="shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+                  >
+                    <MovieCard
+                      movie={movie}
+                      isWatched={watchedIds.has(movie.id)}
+                      isChosen={chosenMovieId === movie.id}
+                      isWatchlisted={watchlistIds.has(movie.id)}
+                      hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
+                      onMarkWatched={() => markWatched(movie)}
+                      onUnwatch={() => unwatch(movie.id)}
+                      onSkip={() => markDismissed(movie.id)}
+                      onChoose={() => handleChoose(movie)}
+                      onUnchoose={() => handleUnchoose(movie)}
+                      onToggleWatchlist={() => toggleWatchlist(movie)}
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* Right arrow column */}
+            <div className="w-5 shrink-0 flex items-center justify-center">
               {canScrollRight && (
                 <button type="button" onClick={scrollMoviesRight}
-                  className="text-zinc-600 hover:text-zinc-400 transition-colors text-xl leading-none cursor-pointer">
+                  className="text-zinc-600 hover:text-zinc-400 transition-colors text-2xl leading-none cursor-pointer">
                   ›
                 </button>
               )}
             </div>
-          )}
+          </div>
         </section>
       )}
     </div>
