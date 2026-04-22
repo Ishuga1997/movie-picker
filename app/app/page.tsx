@@ -407,70 +407,59 @@ export default function Home() {
               <span className="text-xs text-amber-500/70 border border-amber-500/30 rounded-full px-2.5 py-0.5">sorted by rating · AI unavailable</span>
             )}
           </div>
-          <div className="relative">
-            {/* Left: back + go to start */}
-            {cardScrollIndex > 0 && (
-              <div className="absolute left-0 top-0 bottom-0 z-10 w-10 bg-gradient-to-r from-zinc-950 to-transparent flex flex-col items-start justify-center gap-1.5 pl-0.5 pointer-events-none">
-                <button
-                  type="button"
-                  onClick={scrollMoviesLeft}
-                  className="text-zinc-600 hover:text-zinc-400 transition-colors text-2xl leading-none cursor-pointer pointer-events-auto"
-                >
-                  ‹
-                </button>
-                {cardScrollIndex >= 3 && (
-                  <button
-                    type="button"
-                    onClick={scrollToMovieStart}
-                    className="text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors cursor-pointer leading-tight pointer-events-auto"
-                  >
-                    ↩ start
-                  </button>
+          <div
+            ref={scrollRef}
+            onScroll={handleMovieScroll}
+            className="flex gap-4 overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {scrollableMovies.map((movie) => (
+              <div
+                key={movie.id}
+                className="shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+              >
+                <MovieCard
+                  movie={movie}
+                  isWatched={watchedIds.has(movie.id)}
+                  isChosen={chosenMovieId === movie.id}
+                  isWatchlisted={watchlistIds.has(movie.id)}
+                  hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
+                  onMarkWatched={() => markWatched(movie)}
+                  onUnwatch={() => unwatch(movie.id)}
+                  onSkip={() => markDismissed(movie.id)}
+                  onChoose={() => handleChoose(movie)}
+                  onUnchoose={() => handleUnchoose(movie)}
+                  onToggleWatchlist={() => toggleWatchlist(movie)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {(cardScrollIndex > 0 || canScrollRight) && (
+            <div className="mt-3 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {cardScrollIndex > 0 && (
+                  <>
+                    <button type="button" onClick={scrollMoviesLeft}
+                      className="text-zinc-600 hover:text-zinc-400 transition-colors text-xl leading-none cursor-pointer">
+                      ‹
+                    </button>
+                    {cardScrollIndex >= 3 && (
+                      <button type="button" onClick={scrollToMovieStart}
+                        className="text-xs text-zinc-700 hover:text-zinc-500 transition-colors cursor-pointer">
+                        ↩ start
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
-            )}
-
-            {/* Scrollable cards */}
-            <div
-              ref={scrollRef}
-              onScroll={handleMovieScroll}
-              className="flex gap-4 overflow-x-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-              {scrollableMovies.map((movie) => (
-                <div
-                  key={movie.id}
-                  className="shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
-                >
-                  <MovieCard
-                    movie={movie}
-                    isWatched={watchedIds.has(movie.id)}
-                    isChosen={chosenMovieId === movie.id}
-                    isWatchlisted={watchlistIds.has(movie.id)}
-                    hideChoose={chosenMovieId !== null && chosenMovieId !== movie.id}
-                    onMarkWatched={() => markWatched(movie)}
-                    onUnwatch={() => unwatch(movie.id)}
-                    onSkip={() => markDismissed(movie.id)}
-                    onChoose={() => handleChoose(movie)}
-                    onUnchoose={() => handleUnchoose(movie)}
-                    onToggleWatchlist={() => toggleWatchlist(movie)}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Right: forward arrow */}
-            {canScrollRight && (
-              <div className="absolute right-0 top-0 bottom-0 z-10 w-10 bg-gradient-to-l from-zinc-950 to-transparent flex items-center justify-end pr-0.5 pointer-events-none">
-                <button
-                  type="button"
-                  onClick={scrollMoviesRight}
-                  className="text-zinc-600 hover:text-zinc-400 transition-colors text-2xl leading-none cursor-pointer pointer-events-auto"
-                >
+              {canScrollRight && (
+                <button type="button" onClick={scrollMoviesRight}
+                  className="text-zinc-600 hover:text-zinc-400 transition-colors text-xl leading-none cursor-pointer">
                   ›
                 </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </section>
       )}
     </div>
