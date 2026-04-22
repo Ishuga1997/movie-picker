@@ -436,7 +436,7 @@ export default function Home() {
                 {scrollableMovies.map((movie) => (
                   <div
                     key={movie.id}
-                    className="shrink-0 w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+                    className="shrink-0 flex w-[calc((100%-1rem)/2)] sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
                   >
                     <MovieCard
                       movie={movie}
