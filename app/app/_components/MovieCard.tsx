@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, type RefObject } from 'react'
 import type { Movie } from '../../types'
 import { STREAMING_SERVICES, ALL_KNOWN_PROVIDER_IDS, TMDB_IMG, TMDB_LOGO } from '../../lib/filters'
 
@@ -13,7 +13,7 @@ function ProvidersSection({
   providers: NonNullable<Movie['providers']>
   open: boolean
   onToggle: () => void
-  animRef: React.RefObject<HTMLDivElement>
+  animRef: RefObject<HTMLDivElement>
 }) {
   const seenServices = new Set<string>()
 
