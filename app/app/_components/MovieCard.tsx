@@ -13,7 +13,7 @@ function ProvidersSection({
   providers: NonNullable<Movie['providers']>
   open: boolean
   onToggle: () => void
-  animRef: RefObject<HTMLDivElement>
+  animRef: RefObject<HTMLDivElement | null>
 }) {
   const seenServices = new Set<string>()
 
