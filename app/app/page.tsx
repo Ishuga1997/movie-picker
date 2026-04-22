@@ -44,6 +44,15 @@ export default function Home() {
   const [cardScrollIndex, setCardScrollIndex] = useState(0)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
+  // Migrate old localStorage format: region string → regions array
+  useEffect(() => {
+    setParticipants((prev) => prev.map((p) => {
+      if (Array.isArray(p.regions)) return p
+      const legacy = (p as unknown as Record<string, unknown>).region as string | undefined
+      return { ...p, regions: (legacy && legacy !== 'any' ? [legacy] : []) as import('../types').Region[] }
+    }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Load watched, watchlist, and preferences from API on mount
   useEffect(() => {
     fetch('/api/watched')
@@ -242,7 +251,7 @@ export default function Home() {
   }
 
   const hasNonDefaultState = participants.length > 1 || participants.some(
-    (p) => p.name || p.vibe || p.year.mode !== 'any' || p.regions.length > 0 || p.mediaType !== 'any' || p.contentType !== 'any'
+    (p) => p.name || p.vibe || p.year.mode !== 'any' || (p.regions ?? []).length > 0 || p.mediaType !== 'any' || p.contentType !== 'any'
   )
 
   const shownMovies = shownIds.map((id) => allMovies.find((m) => m.id === id)).filter(Boolean) as Movie[]

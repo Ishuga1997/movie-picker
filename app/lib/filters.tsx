@@ -189,7 +189,7 @@ export function ParticipantCard({
     { value: 'asia', label: 'Asia' }, { value: 'india', label: 'India' },
   ]
   const toggleRegion = (r: Region) => {
-    const cur = participant.regions
+    const cur = participant.regions ?? []
     const next = cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]
     onChange({ ...participant, regions: next })
   }
@@ -229,9 +229,9 @@ export function ParticipantCard({
       <div className="space-y-1">
         <label className="text-xs text-zinc-500 uppercase tracking-wide">Region</label>
         <div className="flex flex-wrap gap-2">
-          <Pill active={participant.regions.length === 0} onClick={() => onChange({ ...participant, regions: [] })}>Anywhere</Pill>
+          <Pill active={(participant.regions ?? []).length === 0} onClick={() => onChange({ ...participant, regions: [] })}>Anywhere</Pill>
           {regionOptions.map((r) => (
-            <Pill key={r.value} active={participant.regions.includes(r.value)} onClick={() => toggleRegion(r.value)}>{r.label}</Pill>
+            <Pill key={r.value} active={(participant.regions ?? []).includes(r.value)} onClick={() => toggleRegion(r.value)}>{r.label}</Pill>
           ))}
         </div>
       </div>
