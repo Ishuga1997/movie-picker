@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { CookieBanner } from './_components/CookieBanner'
 
 const NAV_ITEMS = [
   { href: '/app', label: 'Main', exact: true },
@@ -69,6 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <AppNav />
       {children}
+      <CookieBanner />
     </div>
   )
 }

@@ -7,6 +7,7 @@ import {
   makeParticipant, ParticipantCard, WatchSection, TMDB_IMG, TMDB_LOGO,
 } from '../lib/filters'
 import { MovieCard } from './_components/MovieCard'
+import { cookieConsentDeclined } from './_components/CookieBanner'
 
 // ── Persistence ──────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ function useLocalStorage<T>(key: string, initial: T): [T, React.Dispatch<React.S
     } catch { return initial }
   })
   useEffect(() => {
+    if (cookieConsentDeclined()) return
     try { window.localStorage.setItem(key, JSON.stringify(value)) } catch {}
   }, [key, value])
   return [value, setValue]
